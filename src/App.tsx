@@ -221,7 +221,7 @@ function App() {
 
     setLoading(true)
     try {
-      const response = await fetch('https://localhost:443/api/image', {
+      const response = await fetch('https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api/image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
