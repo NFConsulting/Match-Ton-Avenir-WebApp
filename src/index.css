@@ -1,0 +1,21 @@
+:root {
+  font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  font-weight: 500;
+  color: #0f172a;
+  background-color: #e7ecf5;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f6f8fb 0%, #e7ecf5 100%);
+}
+
+a {
+  color: inherit;
+}
