@@ -1,4 +1,4 @@
-import {  useMemo, useState, type Dispatch, type SetStateAction } from 'react'
+import { useEffect, useMemo, useState, type ComponentProps } from 'react'
 import {
   Alert,
   Box,
@@ -6,87 +6,43 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Checkbox,
   Chip,
   CircularProgress,
   Container,
+  Dialog,
+  DialogContent,
   Divider,
-  FormControlLabel,
-  FormGroup,
+  IconButton,
   Paper,
-  Radio,
-  RadioGroup,
   Stack,
-  TextField,
+  SvgIcon,
   Typography,
 } from '@mui/material'
 import './App.css'
+import AvatarSection from './components/AvatarSection'
+import CheckboxList from './components/CheckboxList'
+import JobsSection from './components/JobsSection'
+import PromptPreview from './components/PromptPreview'
+import {
+  cognitive,
+  developOptions,
+  emotional,
+  interests,
+  social,
+} from './constants/options'
+import { fetchImageUrls, generateImage } from './services/imageService'
+import { buildPrompt } from './utils/prompt'
+import type { PromptInput } from './types'
 
-type Option = { label: string; helper?: string }
-
-const cognitive: Option[] = [
-  { label: 'Prise de décision', helper: 'choisir rapidement à qui passer le ballon' },
-  { label: 'Résolution de problèmes', helper: 'adapter une stratégie quand la situation change' },
-  { label: 'Pensée stratégique', helper: 'décider qui attaque ou défend selon le contexte' },
-  { label: 'Attention et concentration', helper: 'rester focus malgré le bruit ou la pression' },
-]
-
-const emotional: Option[] = [
-  { label: 'Gestion du stress', helper: 'rester calme quand le point est décisif' },
-  { label: 'Maîtrise de soi', helper: "ne pas se laisser emporter par l'échec ou la frustration" },
-  { label: 'Confiance en soi', helper: 'oser prendre une initiative' },
-  { label: 'Persévérance', helper: "continuer l'effort même après une erreur" },
-]
-
-const social: Option[] = [
-  { label: 'Communication', helper: '« Passe ! À gauche ! »' },
-  { label: 'Coopération', helper: 'se placer, se relayer, aider un coéquipier' },
-  { label: 'Leadership', helper: 'encourager, motiver, donner une impulsion positive au groupe' },
-  { label: 'Empathie', helper: "tenir compte du niveau et de l'état des autres joueurs" },
-]
-
-const developOptions: Option[] = [
-  { label: 'Prise de décision' },
-  { label: 'Résolution de problèmes' },
-  { label: 'Pensée stratégique' },
-  { label: 'Attention et concentration' },
-  { label: 'Gestion du stress' },
-  { label: 'Maîtrise de soi' },
-  { label: 'Confiance en soi' },
-  { label: 'Persévérance' },
-  { label: 'Communication' },
-  { label: 'Coopération' },
-  { label: 'Leadership' },
-  { label: 'Empathie' },
-]
-
-const interests: Option[] = [
-  { label: 'Numérique / technologie' },
-  { label: 'Création (design, vidéo, écriture, musique…)' },
-  { label: 'Organisation / gestion de projets' },
-  { label: 'Sciences / logique / recherche' },
-  { label: 'Activités manuelles / terrain' },
-]
-
-const avatarPostures = [
-  'Confiant / droit',
-  'Relax / décontracté',
-  'En action / prêt à bouger',
-  'Pensif / concentré',
-  'Explorateur / aventurier',
-]
-
-const avatarStyles = ['Décontracté', 'Sport', 'Créatif', 'Professionnel', 'Futuriste']
-
-const avatarTeints = ['Clair', 'Moyen', 'Foncé', 'Stylisé', 'Peu importe']
-
-type ImageResponse = {
-  url: string
-  revisedPrompt?: string
-}
+const CloseIcon = (props: ComponentProps<typeof SvgIcon>) => (
+  <SvgIcon {...props}>
+    <path d="M6.225 4.811 4.811 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586z" />
+  </SvgIcon>
+)
 
 function App() {
-  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const [strengthsSelected, setStrengthsSelected] = useState<Record<string, boolean>>({})
+  const [developSelected, setDevelopSelected] = useState<Record<string, boolean>>({})
   const [jobs, setJobs] = useState<string[]>(['', '', '', '', ''])
   const [exploring, setExploring] = useState(false)
   const [avatarGender, setAvatarGender] = useState('')
@@ -102,140 +58,79 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const toggle = (label: string) => {
-    setSelected((prev) => ({
-      ...prev,
-      [label]: !prev[label],
-    }))
-  }
+  const [view, setView] = useState<'form' | 'portfolio'>('form')
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [portfolioError, setPortfolioError] = useState<string | null>(null)
+  const [imageUrls, setImageUrls] = useState<string[]>([])
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const [portfolioFetched, setPortfolioFetched] = useState(false)
 
-  const toggleMap = (
-    label: string,
-    updater: Dispatch<SetStateAction<Record<string, boolean>>>,
-  ) => {
-    updater((prev) => ({
+  const toggleStrength = (label: string) =>
+    setStrengthsSelected((prev) => ({
       ...prev,
       [label]: !prev[label],
     }))
-  }
+
+  const toggleDevelop = (label: string) =>
+    setDevelopSelected((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }))
+
+  const togglePosture = (label: string) =>
+    setChosenPostures((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }))
+
+  const toggleStyle = (label: string) =>
+    setChosenStyles((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }))
 
   const counts = useMemo(() => {
-    const groupCount = (options: Option[]) => options.filter((opt) => selected[opt.label]).length
+    const strengthCount = (options: { label: string }[]) =>
+      options.filter((opt) => strengthsSelected[opt.label]).length
+    const developCount = (options: { label: string }[]) =>
+      options.filter((opt) => developSelected[opt.label]).length
     return {
-      cognitive: groupCount(cognitive),
-      emotional: groupCount(emotional),
-      social: groupCount(social),
-      develop: groupCount(developOptions),
-      interests: groupCount(interests),
+      cognitive: strengthCount(cognitive),
+      emotional: strengthCount(emotional),
+      social: strengthCount(social),
+      develop: developCount(developOptions),
+      interests: strengthCount(interests),
     }
-  }, [selected])
+  }, [strengthsSelected, developSelected])
 
-  const renderOptions = (options: Option[]) => (
-    <FormGroup>
-      {options.map((opt) => (
-        <FormControlLabel
-          key={opt.label}
-          control={<Checkbox checked={Boolean(selected[opt.label])} onChange={() => toggle(opt.label)} />}
-          label={
-            <Box>
-              <Typography variant="body1" fontWeight={600}>
-                {opt.label}
-              </Typography>
-              {opt.helper && (
-                <Typography variant="body2" color="text.secondary">
-                  {opt.helper}
-                </Typography>
-              )}
-            </Box>
-          }
-        />
-      ))}
-    </FormGroup>
-  )
+  const buildPromptInput = (): PromptInput => ({
+    strengthsSelected,
+    developSelected,
+    chosenPostures,
+    chosenStyles,
+    avatarGender,
+    avatarExpression,
+    hair,
+    avatarTeint,
+    avatarWords,
+    jobs,
+    exploring,
+  })
 
-  const buildList = (options: Option[]) =>
-    options.filter((opt) => selected[opt.label]).map((opt) => opt.label)
-
-  const buildPrompt = () => {
-    const sportsCompetences = [
-      ...buildList(cognitive),
-      ...buildList(emotional),
-      ...buildList(social),
-    ]
-    const developCompetences = buildList(developOptions)
-    const interestList = buildList(interests)
-    const postures = Object.entries(chosenPostures)
-      .filter(([, isChecked]) => isChecked)
-      .map(([label]) => label)
-    const styles = Object.entries(chosenStyles)
-      .filter(([, isChecked]) => isChecked)
-      .map(([label]) => label)
-    const words = avatarWords.filter(Boolean)
-    const jobList = jobs.filter(Boolean)
-
-    const lines = [
-      "Crée un avatar inspirant représentant une personne jeune adulte (environ 30 ans) pour un public d'enfants.",
-      `Genre : ${avatarGender || 'peu importe'}`,
-      `Cheveux : ${hair || 'non précisé'}`,
-      `Teint : ${avatarTeint || 'peu importe'}`,
-      `Expression du visage : ${avatarExpression || 'calme ou inspiré'}`,
-      `Posture : ${postures.length ? postures.join(', ') : 'non précisée'}`,
-      `Style vestimentaire : ${styles.length ? styles.join(', ') : 'non précisé'}`,
-      `3 mots pour décrire l’avatar : ${words.length ? words.join(', ') : 'non précisés'}`,
-      '',
-      'Compétences et qualités :',
-      `Compétences montrées pendant le sport : ${
-        sportsCompetences.length ? sportsCompetences.join(', ') : 'non précisées'
-      }`,
-      `Compétences à développer : ${
-        developCompetences.length ? developCompetences.join(', ') : 'non précisées'
-      }`,
-      `Centres d’intérêt : ${interestList.length ? interestList.join(', ') : 'non précisés'}`,
-      '',
-      `Métiers possibles : ${
-        jobList.length ? jobList.join(', ') : exploring ? 'à explorer' : 'à déterminer'
-      }`,
-      'Affiche à côté ou autour de l’avatar 5 à 6 métiers correspondant à ce profil, en lien avec ses compétences, qualités et centres d’intérêt.',
-      "Les compétences et centres d’intérêt doivent influencer l’apparence et les accessoires de l’avatar.",
-      "Le visuel doit rester accueillant, positif et adapté pour des enfants.",
-    ]
-
-    if (exploring && !jobList.length) {
-      lines.push("La personne est encore en exploration : proposer des pistes variées adaptées aux enfants.")
-    }
-
-    return lines.join('\n')
-  }
-
-  const handleGenerate = async () => {
-    const prompt = buildPrompt()
-    setGeneratedPrompt(prompt)
+  const submitPrompt = async (prompt: string) => {
     setError(null)
     setRevisedPrompt(undefined)
     setImageUrl('')
 
-    if (!prompt.trim()) {
-      setError('Complète au moins une section pour générer un prompt.')
+    const cleanedPrompt = prompt.trim()
+    if (!cleanedPrompt) {
+      setError('Complète au moins une section ou saisis un prompt avant de lancer la génération.')
       return
     }
 
     setLoading(true)
     try {
-      const response = await fetch('https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api/image', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
-      })
-
-      if (!response.ok) {
-        throw new Error(`Requête échouée (${response.status})`)
-      }
-
-      const data: ImageResponse = await response.json()
-      if (!data.url) {
-        throw new Error('La réponse ne contient pas de champ "url".')
-      }
-
+      const data = await generateImage(cleanedPrompt)
       setImageUrl(data.url)
       setRevisedPrompt(data.revisedPrompt)
     } catch (fetchError) {
@@ -244,6 +139,110 @@ function App() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleGenerate = async () => {
+    const prompt = buildPrompt(buildPromptInput())
+    setGeneratedPrompt(prompt)
+    await submitPrompt(prompt)
+  }
+
+  const handleSendEditedPrompt = async () => {
+    await submitPrompt(generatedPrompt)
+  }
+
+  const loadPortfolio = async () => {
+    setPortfolioError(null)
+    setPortfolioLoading(true)
+    setPortfolioFetched(true)
+    try {
+      const urls = await fetchImageUrls()
+      setImageUrls(urls)
+    } catch (fetchError) {
+      const message = fetchError instanceof Error ? fetchError.message : 'Impossible de récupérer les images.'
+      setPortfolioError(message)
+    } finally {
+      setPortfolioLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (view === 'portfolio' && imageUrls.length === 0 && !portfolioLoading && !portfolioFetched) {
+      void loadPortfolio()
+    }
+  }, [view, imageUrls.length, portfolioLoading, portfolioFetched])
+
+  if (view === 'portfolio') {
+    return (
+      <Container maxWidth="lg" className="app-shell">
+        <Box className="bg-blob blob1" aria-hidden />
+        <Box className="bg-blob blob2" aria-hidden />
+
+        <Box className="hero">
+          <Chip label="Match ton Avenir" color="primary" className="chip" />
+          <Typography variant="h4" component="h1" className="hero-title">
+            Portfolio des images générées
+          </Typography>
+          <Typography variant="body1" className="hero-text">
+            Aperçu de toutes les images renvoyées par l’API /urls. Clique sur une image pour l’ouvrir
+            en grand dans un nouvel onglet.
+          </Typography>
+          <Button variant="outlined" onClick={() => setView('form')} sx={{ mt: 1 }}>
+            Retour au générateur
+          </Button>
+        </Box>
+
+        <Paper elevation={6} className="panel">
+          {portfolioError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {portfolioError}
+            </Alert>
+          )}
+          {portfolioLoading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Box className="portfolio-grid">
+              {imageUrls.length === 0 && (
+                <Typography variant="body1" color="text.secondary">
+                  Aucune image pour le moment.
+                </Typography>
+              )}
+              {imageUrls.map((url) => (
+                <Card key={url} className="portfolio-card" elevation={4} onClick={() => setLightboxUrl(url)}>
+                  <CardMedia component="img" image={url} alt="Image générée" />
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Paper>
+
+        <Dialog
+          open={Boolean(lightboxUrl)}
+          onClose={() => setLightboxUrl(null)}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{ className: 'lightbox-dialog' }}
+        >
+          <Box display="flex" justifyContent="flex-end" pr={1} pt={1}>
+            <IconButton aria-label="Fermer" onClick={() => setLightboxUrl(null)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+          <DialogContent>
+            {lightboxUrl && (
+              <CardMedia
+                component="img"
+                image={lightboxUrl}
+                alt="Aperçu"
+                className="lightbox-image"
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </Container>
+    )
   }
 
   return (
@@ -264,11 +263,14 @@ function App() {
           pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
           compétences, de tes expériences sportives et de tes centres d’intérêt.
         </Typography>
+        <Button variant="outlined" onClick={() => setView('portfolio')} sx={{ mt: 1 }}>
+          Ouvrir le portfolio des images
+        </Button>
       </Box>
 
       <Paper elevation={6} className="panel">
         <Stack spacing={4}>
-          <Box>
+          <Box className="section-block">
             <Typography variant="overline" className="section-eyebrow">
               1. CE QUE J’AI MONTRÉ PENDANT LE SPORT
             </Typography>
@@ -281,7 +283,7 @@ function App() {
                   Compétences cognitives — Esprit clair
                   <Chip label={`${counts.cognitive} sélection(s)`} size="small" className="count-chip" />
                 </Typography>
-                {renderOptions(cognitive)}
+                <CheckboxList options={cognitive} selected={strengthsSelected} onToggle={toggleStrength} />
               </Box>
               <Divider />
               <Box>
@@ -289,7 +291,7 @@ function App() {
                   Compétences émotionnelles — Cœur calme
                   <Chip label={`${counts.emotional} sélection(s)`} size="small" className="count-chip" />
                 </Typography>
-                {renderOptions(emotional)}
+                <CheckboxList options={emotional} selected={strengthsSelected} onToggle={toggleStrength} />
               </Box>
               <Divider />
               <Box>
@@ -297,14 +299,14 @@ function App() {
                   Compétences sociales — Bras ouverts
                   <Chip label={`${counts.social} sélection(s)`} size="small" className="count-chip" />
                 </Typography>
-                {renderOptions(social)}
+                <CheckboxList options={social} selected={strengthsSelected} onToggle={toggleStrength} />
               </Box>
             </Stack>
           </Box>
 
           <Divider />
 
-          <Box>
+          <Box className="section-block">
             <Typography variant="overline" className="section-eyebrow">
               Compétences que j’aimerais développer davantage
             </Typography>
@@ -314,12 +316,12 @@ function App() {
             <Typography variant="h6" gutterBottom>
               <Chip label={`${counts.develop} sélection(s)`} size="small" className="count-chip" />
             </Typography>
-            {renderOptions(developOptions)}
+            <CheckboxList options={developOptions} selected={developSelected} onToggle={toggleDevelop} />
           </Box>
 
           <Divider />
 
-          <Box>
+          <Box className="section-block">
             <Typography variant="overline" className="section-eyebrow">
               2. MES CENTRES D’INTÉRÊT
             </Typography>
@@ -329,48 +331,33 @@ function App() {
             <Typography variant="h6" gutterBottom>
               <Chip label={`${counts.interests} sélection(s)`} size="small" className="count-chip" />
             </Typography>
-            {renderOptions(interests)}
+            <CheckboxList options={interests} selected={strengthsSelected} onToggle={toggleStrength} />
           </Box>
 
           <Divider />
 
-          <Box>
+          <Box className="section-block">
             <Typography variant="overline" className="section-eyebrow">
               3. MÉTIERS QUE J’AI DÉCOUVERTS AUJOURD’HUI
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={2}>
               Écris 1 à 5 métiers qui t’ont le plus intéressé
             </Typography>
-            <Stack spacing={1.5}>
-              {[0, 1, 2, 3, 4].map((idx) => (
-                <TextField
-                  key={idx}
-                  label={`Métier ${idx + 1}`}
-                  value={jobs[idx]}
-                  onChange={(event) => {
-                    const next = [...jobs]
-                    next[idx] = event.target.value
-                    setJobs(next)
-                  }}
-                  fullWidth
-                  size="small"
-                />
-              ))}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={exploring}
-                    onChange={() => setExploring((prev) => !prev)}
-                  />
-                }
-                label="Je suis encore en exploration (et c’est normal)"
-              />
-            </Stack>
+            <JobsSection
+              jobs={jobs}
+              onJobChange={(idx, value) => {
+                const next = [...jobs]
+                next[idx] = value
+                setJobs(next)
+              }}
+              exploring={exploring}
+              onToggleExploring={() => setExploring((prev) => !prev)}
+            />
           </Box>
 
           <Divider />
 
-          <Box>
+          <Box className="section-block">
             <Typography variant="overline" className="section-eyebrow">
               4. À QUOI RESSEMBLE MON AVATAR
             </Typography>
@@ -378,141 +365,26 @@ function App() {
               Imagine ton futur toi et complète les infos ci-dessous
             </Typography>
 
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Genre de l’avatar
-                </Typography>
-                <RadioGroup
-                  row
-                  value={avatarGender}
-                  onChange={(event) => setAvatarGender(event.target.value)}
-                >
-                  {['Féminin', 'Masculin', 'Peu importe'].map((option) => (
-                    <FormControlLabel
-                      key={option}
-                      value={option}
-                      control={<Radio />}
-                      label={option}
-                    />
-                  ))}
-                </RadioGroup>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Expression du visage
-                </Typography>
-                <RadioGroup
-                  row
-                  value={avatarExpression}
-                  onChange={(event) => setAvatarExpression(event.target.value)}
-                >
-                  {['Confiant', 'Calme', 'Inspiré', 'Curieux'].map((option) => (
-                    <FormControlLabel
-                      key={option}
-                      value={option}
-                      control={<Radio />}
-                      label={option}
-                    />
-                  ))}
-                </RadioGroup>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Posture
-                </Typography>
-                <FormGroup row>
-                  {avatarPostures.map((option) => (
-                    <FormControlLabel
-                      key={option}
-                      control={
-                        <Checkbox
-                          checked={Boolean(chosenPostures[option])}
-                          onChange={() => toggleMap(option, setChosenPostures)}
-                        />
-                      }
-                      label={option}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Cheveux (longueur, style, couleur si souhaité)
-                </Typography>
-                <TextField
-                  placeholder="Ex : mi-longs, ondulés, mèches cuivrées"
-                  value={hair}
-                  onChange={(event) => setHair(event.target.value)}
-                  fullWidth
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Style vestimentaire
-                </Typography>
-                <FormGroup row>
-                  {avatarStyles.map((option) => (
-                    <FormControlLabel
-                      key={option}
-                      control={
-                        <Checkbox
-                          checked={Boolean(chosenStyles[option])}
-                          onChange={() => toggleMap(option, setChosenStyles)}
-                        />
-                      }
-                      label={option}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  Teint de l’avatar (optionnel)
-                </Typography>
-                <RadioGroup
-                  row
-                  value={avatarTeint}
-                  onChange={(event) => setAvatarTeint(event.target.value)}
-                >
-                  {avatarTeints.map((option) => (
-                    <FormControlLabel
-                      key={option}
-                      value={option}
-                      control={<Radio />}
-                      label={option}
-                    />
-                  ))}
-                </RadioGroup>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  3 mots pour décrire mon avatar
-                </Typography>
-                <Stack spacing={1.2}>
-                  {[0, 1, 2].map((idx) => (
-                    <TextField
-                      key={idx}
-                      label={`Mot ${idx + 1}`}
-                      value={avatarWords[idx]}
-                      onChange={(event) => {
-                        const next = [...avatarWords]
-                        next[idx] = event.target.value
-                        setAvatarWords(next)
-                      }}
-                      fullWidth
-                      size="small"
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            </Stack>
+            <AvatarSection
+              avatarGender={avatarGender}
+              onGenderChange={setAvatarGender}
+              avatarExpression={avatarExpression}
+              onExpressionChange={setAvatarExpression}
+              chosenPostures={chosenPostures}
+              onTogglePosture={togglePosture}
+              hair={hair}
+              onHairChange={setHair}
+              chosenStyles={chosenStyles}
+              onToggleStyle={toggleStyle}
+              avatarTeint={avatarTeint}
+              onTeintChange={setAvatarTeint}
+              avatarWords={avatarWords}
+              onWordChange={(idx, value) => {
+                const next = [...avatarWords]
+                next[idx] = value
+                setAvatarWords(next)
+              }}
+            />
           </Box>
 
           <Divider />
@@ -542,20 +414,12 @@ function App() {
             )}
           </Box>
 
-          <Box>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
-              Prompt généré (envoyé à l’API)
-            </Typography>
-            <TextField
-              value={generatedPrompt}
-              onChange={(event) => setGeneratedPrompt(event.target.value)}
-              multiline
-              minRows={6}
-              fullWidth
-              className="prompt-preview"
-              placeholder="Le prompt se générera automatiquement après avoir rempli le formulaire."
-            />
-          </Box>
+          <PromptPreview
+            prompt={generatedPrompt}
+            onChange={setGeneratedPrompt}
+            onSend={handleSendEditedPrompt}
+            loading={loading}
+          />
 
           {imageUrl && (
             <Card className="image-card" elevation={8}>
@@ -572,3 +436,4 @@ function App() {
 }
 
 export default App
+

@@ -18,8 +18,8 @@
   gap: 12px;
   padding: 28px 24px;
   border-radius: 18px;
-  background: linear-gradient(135deg, rgba(105, 135, 255, 0.18), rgba(145, 227, 255, 0.32));
-  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+  background: linear-gradient(135deg, rgba(211, 8, 116, 0.14), rgba(151, 151, 151, 0.18));
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
 }
 
 .hero-title {
@@ -28,13 +28,13 @@
 }
 
 .hero-subtitle {
-  color: #475467;
+  color: #000;
   font-weight: 600;
   margin: 0;
 }
 
 .hero-text {
-  color: #5b6477;
+  color: #3a3a3a;
   max-width: 840px;
   line-height: 1.7;
   margin: 0;
@@ -43,24 +43,29 @@
 .panel {
   padding: 28px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 20px 70px rgba(15, 23, 42, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.12);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(151, 151, 151, 0.22);
 }
 
 .section-eyebrow {
   letter-spacing: 0.12em;
   font-weight: 700;
+  color: #d30874;
 }
 
 .count-chip {
   margin-left: 12px;
   vertical-align: middle;
+  background: rgba(211, 8, 116, 0.12);
+  color: #000;
 }
 
 .chip {
   width: fit-content;
+  background: #d30874 !important;
+  color: #fff !important;
 }
 
 .field-block {
@@ -80,18 +85,19 @@
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #ff8fb1, #7c8bff);
-  box-shadow: 0 10px 24px rgba(124, 139, 255, 0.35);
+  background: linear-gradient(135deg, #d30874, #b40764);
+  box-shadow: 0 10px 24px rgba(211, 8, 116, 0.35);
 }
 
 .primary-button:hover {
-  background: linear-gradient(135deg, #ff7aa3, #6e7fff);
-  box-shadow: 0 12px 28px rgba(124, 139, 255, 0.45);
+  background: linear-gradient(135deg, #b40764, #9b0658);
+  box-shadow: 0 12px 28px rgba(211, 8, 116, 0.45);
 }
 
 .prompt-preview {
-  background: #f8f9fc;
+  background: rgba(151, 151, 151, 0.08);
   border-radius: 12px;
+  border: 1px solid rgba(211, 8, 116, 0.18);
 }
 
 .image-card {
@@ -109,7 +115,7 @@
 .blob1 {
   width: 320px;
   height: 320px;
-  background: rgba(255, 143, 177, 0.35);
+  background: rgba(211, 8, 116, 0.28);
   top: -60px;
   right: -120px;
 }
@@ -117,7 +123,60 @@
 .blob2 {
   width: 280px;
   height: 280px;
-  background: rgba(124, 139, 255, 0.28);
+  background: rgba(151, 151, 151, 0.22);
   bottom: -80px;
   left: -100px;
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.portfolio-card {
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.portfolio-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.18);
+}
+
+.lightbox-dialog {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.lightbox-image {
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.section-block {
+  padding: 20px 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(211, 8, 116, 0.05), rgba(151, 151, 151, 0.08));
+  border: 1px solid rgba(211, 8, 116, 0.12);
+}
+
+.section-block:hover {
+  border-color: rgba(211, 8, 116, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.MuiCheckbox-root.Mui-checked,
+.MuiRadio-root.Mui-checked {
+  color: #d30874 !important;
+}
+
+.MuiFormControlLabel-label {
+  color: #111;
+}
+
+.MuiChip-root.count-chip .MuiChip-label {
+  font-weight: 700;
 }
