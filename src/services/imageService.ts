@@ -1,6 +1,6 @@
 import type { CachedUrl, ImageResponse } from '../types'
 
-const BASE_API_URL = import.meta.env.VITE_API_BASE_URL ?? 'matchtonavenir-web-bed5b3enfph0bkbz.francecentral-01.azurewebsites.net'
+const BASE_API_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://matchtonavenir-web-bed3enfph0bkbz.francecentral-01.azurewebsites.net'
 const API_URL = `${BASE_API_URL}/api/image`
 const GOOGLE_API_URL = `${BASE_API_URL}/api/image/google`
 

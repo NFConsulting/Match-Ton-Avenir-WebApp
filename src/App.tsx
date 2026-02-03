@@ -176,6 +176,14 @@ function App() {
     exploring,
   })
 
+  const friendlyMessage = (message: string, fallback: string) => {
+    const lower = message.toLowerCase()
+    if (lower.includes('failed to fetch') || lower.includes('networkerror')) {
+      return fallback
+    }
+    return message
+  }
+
   const submitPrompt = async (
     prompt: string,
     generator: (p: string) => Promise<{ url: string; revisedPrompt?: string; id?: string }> = generateImage
@@ -204,7 +212,8 @@ function App() {
         setView('form') // align view state when switching to single
       }
     } catch (fetchError) {
-      const message = fetchError instanceof Error ? fetchError.message : 'Impossible de contacter le service.'
+      const rawMessage = fetchError instanceof Error ? fetchError.message : ''
+      const message = friendlyMessage(rawMessage, 'Impossible de contacter le service.')
       setError(message)
     } finally {
       setLoading(false)
@@ -235,7 +244,8 @@ function App() {
       const urls = await fetchImageUrls()
       setImageUrls(urls)
     } catch (fetchError) {
-      const message = fetchError instanceof Error ? fetchError.message : 'Impossible de récupérer les images.'
+      const rawMessage = fetchError instanceof Error ? fetchError.message : ''
+      const message = friendlyMessage(rawMessage, 'Impossible de récupérer les images.')
       setPortfolioError(message)
     } finally {
       setPortfolioLoading(false)
@@ -593,8 +603,7 @@ function App() {
             Portfolio des images générées
           </Typography>
           <Typography variant="body1" className="hero-text">
-            Aperçu de toutes les images renvoyées par l’API /urls. Clique sur une image pour l’ouvrir
-            en grand dans un nouvel onglet.
+            Liste des toutes les images générées
           </Typography>
           <Button
             variant="outlined"
@@ -621,7 +630,7 @@ function App() {
             <Box className="portfolio-grid">
               {imageUrls.length === 0 && (
                 <Typography variant="body1" color="text.secondary">
-                  Aucune image pour le moment.
+                  Il n&apos;y a pas encore d&apos;image pour le moment :(
                 </Typography>
               )}
               {imageUrls.map(({ id, url }) => (
@@ -713,12 +722,7 @@ function App() {
                   {error}
                 </Alert>
               )}
-              {revisedPrompt && !error && (
-                <Alert severity="info" sx={{ mr: 2 }}>
-                  Reformulation API : {revisedPrompt}
-                </Alert>
-              )}
-          {isLastStep ? (
+              {isLastStep ? (
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained"
