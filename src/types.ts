@@ -3,6 +3,12 @@ export type Option = { label: string; helper?: string }
 export type ImageResponse = {
   url: string
   revisedPrompt?: string
+  id?: string
+}
+
+export type CachedUrl = {
+  id: string
+  url: string
 }
 
 export type PromptInput = {

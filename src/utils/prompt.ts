@@ -41,7 +41,7 @@ export const buildPrompt = ({
 
   const lines = [
     "Crée un avatar inspirant représentant une personne jeune adulte (environ 30 ans) pour un public d'enfants.",
-    "Aucune lettre, aucun mot, aucun texte dans l'image. Pas d'alphabet latin ou autre. Si une zone pourrait contenir du texte, laisse-la vide ou remplace-la par un pictogramme simple.",
+    "Tous les mots dans l'image doivent être en français simple. Pas d'anglais. Si tu hésites, privilégie un pictogramme plutôt que du texte.",
     "Illustrer chaque compétence, centre d'intérêt et métier uniquement par des pictogrammes/icônes/symboles clairs et faciles à comprendre par des enfants.",
     "Place 5 à 6 pictogrammes de métiers autour de l'avatar (sans texte).",
     `Genre : ${avatarGender || 'peu importe'}`,
