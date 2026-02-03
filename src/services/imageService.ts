@@ -1,6 +1,6 @@
 import type { CachedUrl, ImageResponse } from '../types'
 
-const BASE_API_URL = import.meta.env.VITE_API_URL ?? 'https://matchtonavenir-api-bxdh0dnd3h9dzde.francecentral-01.azurewebsites.net/api';
+const BASE_API_URL = import.meta.env.VITE_API_URL ?? 'https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api';
 
 
 const API_URL = `${BASE_API_URL}/image`
