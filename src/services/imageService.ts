@@ -22,14 +22,14 @@ export const generateImage = async (prompt: string): Promise<ImageResponse> => {
 }
 
 export const fetchImageUrls = async (): Promise<string[]> => {
-  const response = await fetch('https://www.matchtonavenir.info/api/urls')
+  const response = await fetch('https://www.matchtonavenir.info/api/image/urls')
 
   if (!response.ok) {
     throw new Error(`Requête échouée (${response.status})`)
   }
 
-  const data = (await response.json()) as { urls?: string[]; items?: string[]; data?: string[] }
-  const urls = data.urls ?? data.items ?? data.data
+  const data = (await response.json()) as { urls?: string[]; items?: string[]; data?: string[] } | string[]
+  const urls = Array.isArray(data) ? data : data.urls ?? data.items ?? data.data
 
   if (!urls || !Array.isArray(urls)) {
     throw new Error('La réponse ne contient pas de liste d’URL.')
