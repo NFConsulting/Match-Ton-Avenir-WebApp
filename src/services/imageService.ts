@@ -1,8 +1,10 @@
 import type { CachedUrl, ImageResponse } from '../types'
 
-const BASE_API_URL = import.meta.env.VITE_API_BASE_URL ?? 'https://matchtonavenir-web-bed3enfph0bkbz.francecentral-01.azurewebsites.net'
-const API_URL = `${BASE_API_URL}/api/image`
-const GOOGLE_API_URL = `${BASE_API_URL}/api/image/google`
+const BASE_API_URL = import.meta.env.VITE_API_URL ?? 'https://matchtonavenir-api-bxdh0dnd3h9dzde.francecentral-01.azurewebsites.net/api';
+
+
+const API_URL = `${BASE_API_URL}/image`
+const GOOGLE_API_URL = `${BASE_API_URL}/image/google`
 
 const extractImageId = (url: string): string | undefined => {
   // Typical pattern: .../img-<id>.png?...; capture the <id> part
@@ -40,7 +42,7 @@ export const generateImageGoogle = async (prompt: string): Promise<ImageResponse
   callImageApi(GOOGLE_API_URL, prompt)
 
 export const fetchImageUrls = async (): Promise<CachedUrl[]> => {
-  const response = await fetch(`${BASE_API_URL}/api/image/urls`)
+  const response = await fetch(`${BASE_API_URL}/image/urls`)
 
   if (!response.ok) {
     throw new Error(`Requête échouée (${response.status})`)
