@@ -63,7 +63,6 @@ function App() {
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [imageId, setImageId] = useState<string | undefined>()
-  const [revisedPrompt, setRevisedPrompt] = useState<string | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -189,7 +188,6 @@ function App() {
     generator: (p: string) => Promise<{ url: string; revisedPrompt?: string; id?: string }> = generateImage
   ) => {
     setError(null)
-    setRevisedPrompt(undefined)
     setImageUrl('')
     setImageId(undefined)
 
@@ -204,7 +202,6 @@ function App() {
       const data = await generator(cleanedPrompt)
       setImageUrl(data.url)
       setImageId(data.id)
-      setRevisedPrompt(data.revisedPrompt)
       if (data.id) {
         const newUrl = `/monImage/${data.id}`
         window.history.pushState({}, '', newUrl)
@@ -479,7 +476,6 @@ function App() {
     setGeneratedPrompt('')
     setImageUrl('')
     setImageId(undefined)
-    setRevisedPrompt(undefined)
     setError(null)
     setLoading(false)
   }
@@ -752,4 +748,3 @@ function App() {
 }
 
 export default App
-
