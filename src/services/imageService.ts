@@ -37,7 +37,7 @@ const callImageApi = async (url: string, prompt: string): Promise<ImageResponse>
 }
 
 export const generateImage = async (prompt: string): Promise<ImageResponse> => callImageApi(API_URL, prompt)
-
+ 
 export const generateImageGoogle = async (prompt: string): Promise<ImageResponse> =>
   callImageApi(GOOGLE_API_URL, prompt)
 

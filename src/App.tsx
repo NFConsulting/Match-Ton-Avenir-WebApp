@@ -72,7 +72,6 @@ function App() {
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [imageUrls, setImageUrls] = useState<CachedUrl[]>([])
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
-  const [portfolioFetched, setPortfolioFetched] = useState(false)
   const [singleImageUrl, setSingleImageUrl] = useState<string | null>(null)
   const [singleImageError, setSingleImageError] = useState<string | null>(null)
 
@@ -236,7 +235,6 @@ function App() {
   const loadPortfolio = async () => {
     setPortfolioError(null)
     setPortfolioLoading(true)
-    setPortfolioFetched(true)
     try {
       const urls = await fetchImageUrls()
       setImageUrls(urls)
@@ -250,10 +248,10 @@ function App() {
   }
 
   useEffect(() => {
-    if (view === 'portfolio' && imageUrls.length === 0 && !portfolioLoading && !portfolioFetched) {
+    if (view === 'portfolio' && !portfolioLoading) {
       void loadPortfolio()
     }
-  }, [view, imageUrls.length, portfolioLoading, portfolioFetched])
+  }, [view, portfolioLoading])
 
   useEffect(() => {
     const onPopState = () => {
@@ -496,6 +494,7 @@ function App() {
     setRoute({ view: 'form' })
     setView('portfolio')
     setLightboxUrl(null)
+    setImageUrls([])
   }
 
   const goNext = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1))
