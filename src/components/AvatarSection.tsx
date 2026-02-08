@@ -1,4 +1,3 @@
-import { Box, FormControlLabel, Radio, RadioGroup, Stack, TextField, Typography } from '@mui/material'
 import CheckboxList from './CheckboxList'
 import { avatarPostures, avatarStyles, avatarTeints } from '../constants/options'
 
@@ -35,88 +34,120 @@ const AvatarSection = ({
   avatarWords,
   onWordChange,
 }: AvatarSectionProps) => (
-  <Stack spacing={3}>
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Genre de l’avatar
-      </Typography>
-      <RadioGroup row value={avatarGender} onChange={(event) => onGenderChange(event.target.value)}>
+  <div className="space-y-6">
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Genre de l’avatar</p>
+      <div className="flex flex-wrap gap-3">
         {['Féminin', 'Masculin', 'Peu importe'].map((option) => (
-          <FormControlLabel key={option} value={option} control={<Radio />} label={option} />
+          <label
+            key={option}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:border-brand-500/30"
+          >
+            <input
+              type="radio"
+              name="avatarGender"
+              value={option}
+              checked={avatarGender === option}
+              onChange={(event) => onGenderChange(event.target.value)}
+              className="h-4 w-4 accent-brand-500"
+            />
+            {option}
+          </label>
         ))}
-      </RadioGroup>
-    </Box>
+      </div>
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Expression du visage
-      </Typography>
-      <RadioGroup
-        row
-        value={avatarExpression}
-        onChange={(event) => onExpressionChange(event.target.value)}
-      >
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Expression du visage</p>
+      <div className="flex flex-wrap gap-3">
         {['Confiant', 'Calme', 'Inspiré', 'Curieux'].map((option) => (
-          <FormControlLabel key={option} value={option} control={<Radio />} label={option} />
+          <label
+            key={option}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:border-brand-500/30"
+          >
+            <input
+              type="radio"
+              name="avatarExpression"
+              value={option}
+              checked={avatarExpression === option}
+              onChange={(event) => onExpressionChange(event.target.value)}
+              className="h-4 w-4 accent-brand-500"
+            />
+            {option}
+          </label>
         ))}
-      </RadioGroup>
-    </Box>
+      </div>
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Posture
-      </Typography>
-      <CheckboxList options={avatarPostures.map((label) => ({ label }))} selected={chosenPostures} onToggle={onTogglePosture} row />
-    </Box>
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Posture</p>
+      <CheckboxList
+        options={avatarPostures.map((label) => ({ label }))}
+        selected={chosenPostures}
+        onToggle={onTogglePosture}
+        row
+      />
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Cheveux (longueur, style, couleur si souhaité)
-      </Typography>
-      <TextField
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Cheveux (longueur, style, couleur si souhaité)</p>
+      <input
         placeholder="Ex : mi-longs, ondulés, mèches cuivrées"
         value={hair}
         onChange={(event) => onHairChange(event.target.value)}
-        fullWidth
+        className="w-full rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
       />
-    </Box>
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Style vestimentaire
-      </Typography>
-      <CheckboxList options={avatarStyles.map((label) => ({ label }))} selected={chosenStyles} onToggle={onToggleStyle} row />
-    </Box>
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Style vestimentaire</p>
+      <CheckboxList
+        options={avatarStyles.map((label) => ({ label }))}
+        selected={chosenStyles}
+        onToggle={onToggleStyle}
+        row
+      />
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        Teint de l’avatar (optionnel)
-      </Typography>
-      <RadioGroup row value={avatarTeint} onChange={(event) => onTeintChange(event.target.value)}>
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">Teint de l’avatar (optionnel)</p>
+      <div className="flex flex-wrap gap-3">
         {avatarTeints.map((option) => (
-          <FormControlLabel key={option} value={option} control={<Radio />} label={option} />
+          <label
+            key={option}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:border-brand-500/30"
+          >
+            <input
+              type="radio"
+              name="avatarTeint"
+              value={option}
+              checked={avatarTeint === option}
+              onChange={(event) => onTeintChange(event.target.value)}
+              className="h-4 w-4 accent-brand-500"
+            />
+            {option}
+          </label>
         ))}
-      </RadioGroup>
-    </Box>
+      </div>
+    </div>
 
-    <Box>
-      <Typography variant="subtitle1" fontWeight={700}>
-        3 mots pour décrire mon avatar
-      </Typography>
-      <Stack spacing={1.2}>
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">3 mots pour décrire mon avatar</p>
+      <div className="space-y-2">
         {[0, 1, 2].map((idx) => (
-          <TextField
-            key={idx}
-            label={`Mot ${idx + 1}`}
-            value={avatarWords[idx]}
-            onChange={(event) => onWordChange(idx, event.target.value)}
-            fullWidth
-            size="small"
-          />
+          <label key={idx} className="grid gap-1 text-sm font-medium text-slate-700">
+            Mot {idx + 1}
+            <input
+              value={avatarWords[idx]}
+              onChange={(event) => onWordChange(idx, event.target.value)}
+              className="w-full rounded-xl border border-slate-200/80 bg-white/90 px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-brand-500/40 focus:outline-none focus:ring-2 focus:ring-brand-400/30"
+              placeholder={`Mot ${idx + 1}`}
+            />
+          </label>
         ))}
-      </Stack>
-    </Box>
-  </Stack>
+      </div>
+    </div>
+  </div>
 )
 
 export default AvatarSection

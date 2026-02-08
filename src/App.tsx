@@ -1,24 +1,4 @@
 import { useEffect, useMemo, useState, type ComponentProps } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  CircularProgress,
-  Container,
-  Dialog,
-  DialogContent,
-  Divider,
-  IconButton,
-  Paper,
-  Stack,
-  SvgIcon,
-  Typography,
-} from '@mui/material'
-import './App.css'
 import AvatarSection from './components/AvatarSection'
 import CheckboxList from './components/CheckboxList'
 import JobsSection from './components/JobsSection'
@@ -34,11 +14,45 @@ import { fetchImageUrls, generateImage, generateImageGoogle } from './services/i
 import { buildPrompt } from './utils/prompt'
 import type { CachedUrl, PromptInput } from './types'
 
-const CloseIcon = (props: ComponentProps<typeof SvgIcon>) => (
-  <SvgIcon {...props}>
+const CloseIcon = (props: ComponentProps<'svg'>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
     <path d="M6.225 4.811 4.811 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586z" />
-  </SvgIcon>
+  </svg>
 )
+
+const containerBase = 'relative mx-auto w-full px-4 sm:px-6 lg:px-8'
+const containerMd = `${containerBase} max-w-5xl`
+const containerLg = `${containerBase} max-w-6xl`
+const appShell = 'flex min-h-screen flex-col gap-7 py-12'
+
+const heroClass =
+  'flex flex-col gap-3 rounded-2xl bg-[linear-gradient(135deg,rgb(var(--brand-500)/0.14),rgba(151,151,151,0.18))] px-6 py-7 shadow-[0_12px_40px_rgba(0,0,0,0.14)]'
+const panelClass =
+  'rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.12)] backdrop-blur'
+const sectionBlockClass =
+  'rounded-2xl border border-brand-500/10 bg-[linear-gradient(135deg,rgb(var(--brand-500)/0.05),rgba(151,151,151,0.08))] p-5 transition hover:border-brand-500/20 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)]'
+const eyebrowClass = 'text-xs font-bold uppercase tracking-[0.2em] text-brand-500'
+const chipClass =
+  'inline-flex w-fit items-center rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white'
+const countChipClass =
+  'inline-flex items-center rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-900'
+
+const buttonBase =
+  'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 disabled:pointer-events-none disabled:opacity-50'
+const buttonPrimary =
+  `${buttonBase} bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-[0_10px_24px_rgba(211,8,116,0.35)] hover:from-brand-600 hover:to-brand-700`
+const buttonPrimaryLarge =
+  `${buttonPrimary} px-5 py-3 text-base shadow-[0_12px_28px_rgba(211,8,116,0.45)]`
+const buttonOutline =
+  `${buttonBase} border border-slate-200 bg-white/80 text-slate-900 hover:bg-white`
+
+const spinner = (
+  <div className="flex justify-center py-8">
+    <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
+  </div>
+)
+
+const errorBoxClass = 'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'
 
 function App() {
   const [route, setRoute] = useState<{ view: 'form' | 'portfolio' | 'single'; imageId?: string }>(() => {
@@ -71,6 +85,7 @@ function App() {
   const [portfolioLoading, setPortfolioLoading] = useState(false)
   const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [imageUrls, setImageUrls] = useState<CachedUrl[]>([])
+  const [portfolioReloadKey, setPortfolioReloadKey] = useState(0)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [singleImageUrl, setSingleImageUrl] = useState<string | null>(null)
   const [singleImageError, setSingleImageError] = useState<string | null>(null)
@@ -248,10 +263,10 @@ function App() {
   }
 
   useEffect(() => {
-    if (view === 'portfolio' && !portfolioLoading) {
+    if (view === 'portfolio') {
       void loadPortfolio()
     }
-  }, [view, portfolioLoading])
+  }, [view, portfolioReloadKey])
 
   useEffect(() => {
     const onPopState = () => {
@@ -275,141 +290,147 @@ function App() {
         id: 'strengths',
         label: 'Ce que j’ai montré pendant le sport',
         content: (
-          <Box className="section-block">
-            <Typography variant="overline" className="section-eyebrow">
-              1. CE QUE J’AI MONTRÉ PENDANT LE SPORT
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
+          <div className={sectionBlockClass}>
+            <p className={eyebrowClass}>1. CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
+            <p className="mt-2 text-sm text-slate-600">
               Choisis 3 à 5 compétences que tu as le plus montrées
-            </Typography>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="h6" gutterBottom>
+            </p>
+            <div className="mt-5 space-y-6">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
                   Compétences cognitives — Esprit clair
-                  <Chip label={`${counts.cognitive} sélection(s)`} size="small" className="count-chip" />
-                </Typography>
-                <CheckboxList options={cognitive} selected={strengthsSelected} onToggle={toggleStrength} />
-              </Box>
-              <Divider />
-              <Box>
-                <Typography variant="h6" gutterBottom>
+                  <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
+                </h3>
+                <div className="mt-3">
+                  <CheckboxList options={cognitive} selected={strengthsSelected} onToggle={toggleStrength} />
+                </div>
+              </div>
+              <div className="h-px bg-slate-200/80" />
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
                   Compétences émotionnelles — Cœur calme
-                  <Chip label={`${counts.emotional} sélection(s)`} size="small" className="count-chip" />
-                </Typography>
-                <CheckboxList options={emotional} selected={strengthsSelected} onToggle={toggleStrength} />
-              </Box>
-              <Divider />
-              <Box>
-                <Typography variant="h6" gutterBottom>
+                  <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
+                </h3>
+                <div className="mt-3">
+                  <CheckboxList options={emotional} selected={strengthsSelected} onToggle={toggleStrength} />
+                </div>
+              </div>
+              <div className="h-px bg-slate-200/80" />
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">
                   Compétences sociales — Bras ouverts
-                  <Chip label={`${counts.social} sélection(s)`} size="small" className="count-chip" />
-                </Typography>
-                <CheckboxList options={social} selected={strengthsSelected} onToggle={toggleStrength} />
-              </Box>
-            </Stack>
-          </Box>
+                  <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
+                </h3>
+                <div className="mt-3">
+                  <CheckboxList options={social} selected={strengthsSelected} onToggle={toggleStrength} />
+                </div>
+              </div>
+            </div>
+          </div>
         ),
       },
       {
         id: 'develop',
         label: 'Compétences à développer',
         content: (
-          <Box className="section-block">
-            <Typography variant="overline" className="section-eyebrow">
-              Compétences que j’aimerais développer davantage
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
+          <div className={sectionBlockClass}>
+            <p className={eyebrowClass}>Compétences que j’aimerais développer davantage</p>
+            <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 compétences que tu souhaites améliorer
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              <Chip label={`${counts.develop} sélection(s)`} size="small" className="count-chip" />
-            </Typography>
-            <CheckboxList options={developOptions} selected={developSelected} onToggle={toggleDevelop} />
-          </Box>
+            </p>
+            <h3 className="mt-3 text-base font-semibold text-slate-900">
+              Sélections
+              <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
+            </h3>
+            <div className="mt-3">
+              <CheckboxList options={developOptions} selected={developSelected} onToggle={toggleDevelop} />
+            </div>
+          </div>
         ),
       },
       {
         id: 'interests',
         label: 'Centres d’intérêt',
         content: (
-          <Box className="section-block">
-            <Typography variant="overline" className="section-eyebrow">
-              2. MES CENTRES D’INTÉRÊT
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
+          <div className={sectionBlockClass}>
+            <p className={eyebrowClass}>2. MES CENTRES D’INTÉRÊT</p>
+            <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 centres d’intérêt que tu préfères
-            </Typography>
-            <Typography variant="h6" gutterBottom>
-              <Chip label={`${counts.interests} sélection(s)`} size="small" className="count-chip" />
-            </Typography>
-            <CheckboxList options={interests} selected={strengthsSelected} onToggle={toggleStrength} />
-          </Box>
+            </p>
+            <h3 className="mt-3 text-base font-semibold text-slate-900">
+              Sélections
+              <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
+            </h3>
+            <div className="mt-3">
+              <CheckboxList options={interests} selected={strengthsSelected} onToggle={toggleStrength} />
+            </div>
+          </div>
         ),
       },
       {
         id: 'jobs',
         label: 'Métiers explorés',
         content: (
-          <Box className="section-block">
-            <Typography variant="overline" className="section-eyebrow">
-              3. MÉTIERS QUE J’AI DÉCOUVERTS AUJOURD’HUI
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
+          <div className={sectionBlockClass}>
+            <p className={eyebrowClass}>3. MÉTIERS QUE J’AI DÉCOUVERTS AUJOURD’HUI</p>
+            <p className="mt-2 text-sm text-slate-600">
               Écris 1 à 5 métiers qui t’ont le plus intéressé
-            </Typography>
-            <JobsSection
-              jobs={jobs}
-              onJobChange={(idx, value) => {
-                const next = [...jobs]
-                next[idx] = value
-                setJobs(next)
-              }}
-              exploring={exploring}
-              onToggleExploring={() => setExploring((prev) => !prev)}
-            />
-          </Box>
+            </p>
+            <div className="mt-4">
+              <JobsSection
+                jobs={jobs}
+                onJobChange={(idx, value) => {
+                  const next = [...jobs]
+                  next[idx] = value
+                  setJobs(next)
+                }}
+                exploring={exploring}
+                onToggleExploring={() => setExploring((prev) => !prev)}
+              />
+            </div>
+          </div>
         ),
       },
       {
         id: 'avatar',
         label: 'Détails de l’avatar',
         content: (
-          <Box className="section-block">
-            <Typography variant="overline" className="section-eyebrow">
-              4. À QUOI RESSEMBLE MON AVATAR
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mb={2}>
+          <div className={sectionBlockClass}>
+            <p className={eyebrowClass}>4. À QUOI RESSEMBLE MON AVATAR</p>
+            <p className="mt-2 text-sm text-slate-600">
               Imagine ton futur toi et complète les infos ci-dessous
-            </Typography>
+            </p>
 
-            <AvatarSection
-              avatarGender={avatarGender}
-              onGenderChange={setAvatarGender}
-              avatarExpression={avatarExpression}
-              onExpressionChange={setAvatarExpression}
-              chosenPostures={chosenPostures}
-              onTogglePosture={togglePosture}
-              hair={hair}
-              onHairChange={setHair}
-              chosenStyles={chosenStyles}
-              onToggleStyle={toggleStyle}
-              avatarTeint={avatarTeint}
-              onTeintChange={setAvatarTeint}
-              avatarWords={avatarWords}
-              onWordChange={(idx, value) => {
-                const next = [...avatarWords]
-                next[idx] = value
-                setAvatarWords(next)
-              }}
-            />
-          </Box>
+            <div className="mt-5">
+              <AvatarSection
+                avatarGender={avatarGender}
+                onGenderChange={setAvatarGender}
+                avatarExpression={avatarExpression}
+                onExpressionChange={setAvatarExpression}
+                chosenPostures={chosenPostures}
+                onTogglePosture={togglePosture}
+                hair={hair}
+                onHairChange={setHair}
+                chosenStyles={chosenStyles}
+                onToggleStyle={toggleStyle}
+                avatarTeint={avatarTeint}
+                onTeintChange={setAvatarTeint}
+                avatarWords={avatarWords}
+                onWordChange={(idx, value) => {
+                  const next = [...avatarWords]
+                  next[idx] = value
+                  setAvatarWords(next)
+                }}
+              />
+            </div>
+          </div>
         ),
       },
       {
         id: 'preview',
         label: 'Prévisualisation & génération',
         content: (
-          <Stack spacing={3}>
+          <div className="space-y-4">
             <PromptPreview
               prompt={generatedPrompt}
               onChange={setGeneratedPrompt}
@@ -417,19 +438,19 @@ function App() {
               loading={loading}
             />
             {imageUrl && (
-              <Card className="image-card" elevation={8}>
-                <CardMedia component="img" image={imageUrl} alt="Avatar généré" />
-                <CardContent>
-                  <Typography variant="subtitle1">Image renvoyée par l’API</Typography>
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
+                <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+                <div className="space-y-1 px-5 py-4">
+                  <p className="text-base font-semibold text-slate-900">Image renvoyée par l’API</p>
                   {imageId && (
-                    <Typography variant="body2" color="text.secondary">
+                    <p className="text-sm text-slate-600">
                       ID : {imageId}
-                    </Typography>
+                    </p>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
-          </Stack>
+          </div>
         ),
       },
     ],
@@ -495,6 +516,7 @@ function App() {
     setView('portfolio')
     setLightboxUrl(null)
     setImageUrls([])
+    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrée
   }
 
   const goNext = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1))
@@ -527,7 +549,7 @@ function App() {
           setImageUrls(urls) // keep cache
           setSingleImageUrl(found.url)
         } else {
-          setSingleImageError("Image introuvable avec cet identifiant.")
+          setSingleImageError('Image introuvable avec cet identifiant.')
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Impossible de récupérer l’image.'
@@ -540,209 +562,218 @@ function App() {
 
   if (route.view === 'single' && route.imageId) {
     return (
-      <Container maxWidth="md" className="app-shell">
-        <Box className="bg-blob blob1" aria-hidden />
-        <Box className="bg-blob blob2" aria-hidden />
+      <main className={`${containerMd} ${appShell}`}>
+        <div className="pointer-events-none absolute right-[-120px] top-[-60px] h-[320px] w-[320px] rounded-full bg-[rgb(var(--brand-500)/0.28)] blur-[48px] opacity-70" aria-hidden />
+        <div className="pointer-events-none absolute bottom-[-80px] left-[-100px] h-[280px] w-[280px] rounded-full bg-[rgba(151,151,151,0.22)] blur-[48px] opacity-70" aria-hidden />
 
-        <Box className="hero">
-          <Chip label="Match ton Avenir" color="primary" className="chip" />
-          <Typography variant="h4" component="h1" className="hero-title">
+        <section className={heroClass}>
+          <span className={chipClass}>Match ton Avenir</span>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
             Aperçu de l’image
-          </Typography>
-          <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-            <Button
-              variant="contained"
-              onClick={goToGenerator}
-            >
+          </h1>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <button className={buttonPrimary} onClick={goToGenerator}>
               Revenir au générateur
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={goToPortfolio}
-            >
-              Afficher les avatars de mes amis
-            </Button>
-          </Stack>
-        </Box>
+            </button>
+            <button className={buttonOutline} onClick={goToPortfolio}>
+              Afficher la galerie des images
+            </button>
+          </div>
+        </section>
 
-        <Paper elevation={6} className="panel">
+        <section className={panelClass}>
           {singleImageError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <div className={`${errorBoxClass} mb-3`}>
               {singleImageError}
-            </Alert>
+            </div>
           )}
-          {!singleImageUrl && !singleImageError && (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
-          )}
+          {!singleImageUrl && !singleImageError && spinner}
           {singleImageUrl && (
-            <Card className="image-card" elevation={8}>
-              <CardMedia component="img" image={singleImageUrl} alt="Avatar généré" />
-            </Card>
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+              <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+            </div>
           )}
-        </Paper>
-      </Container>
+        </section>
+      </main>
     )
   }
 
   if (view === 'portfolio') {
     return (
-      <Container maxWidth="lg" className="app-shell">
-        <Box className="bg-blob blob1" aria-hidden />
-        <Box className="bg-blob blob2" aria-hidden />
+      <main className={`${containerLg} ${appShell}`}>
+        <div className="pointer-events-none absolute right-[-120px] top-[-60px] h-[320px] w-[320px] rounded-full bg-[rgb(var(--brand-500)/0.28)] blur-[48px] opacity-70" aria-hidden />
+        <div className="pointer-events-none absolute bottom-[-80px] left-[-100px] h-[280px] w-[280px] rounded-full bg-[rgba(151,151,151,0.22)] blur-[48px] opacity-70" aria-hidden />
 
-        <Box className="hero">
-          <Chip label="Match ton Avenir" color="primary" className="chip" />
-          <Typography variant="h4" component="h1" className="hero-title">
-            Portfolio des images générées
-          </Typography>
-          <Typography variant="body1" className="hero-text">
-            Liste des toutes les images générées
-          </Typography>
-          <Button
-            variant="outlined"
-            onClick={() => {
-              goToGenerator()
-            }}
-            sx={{ mt: 1 }}
-          >
-            Retour au générateur
-          </Button>
-        </Box>
+        <section className={heroClass}>
+          <span className={chipClass}>Match ton Avenir</span>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            Galerie des images générées
+          </h1>
+          <p className="text-sm text-slate-600">
+            Liste de toutes les images générées
+          </p>
+          <div className="flex flex-wrap gap-3 pt-1">
+            <button
+              className={buttonOutline}
+              onClick={() => {
+                goToGenerator()
+              }}
+            >
+              Retour au générateur
+            </button>
+            <button
+              className={buttonPrimary}
+              onClick={() => setPortfolioReloadKey((prev) => prev + 1)}
+              disabled={portfolioLoading}
+            >
+              Rafraîchir la liste
+            </button>
+          </div>
+        </section>
 
-        <Paper elevation={6} className="panel">
+        <section className={panelClass}>
           {portfolioError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <div className={`${errorBoxClass} mb-3`}>
               {portfolioError}
-            </Alert>
+            </div>
           )}
           {portfolioLoading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
+            spinner
           ) : (
-            <Box className="portfolio-grid">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
               {imageUrls.length === 0 && (
-                <Typography variant="body1" color="text.secondary">
+                <p className="text-sm text-slate-500">
                   Il n&apos;y a pas encore d&apos;image pour le moment :(
-                </Typography>
+                </p>
               )}
               {imageUrls.map(({ id, url }) => (
-                <Card key={id ?? url} className="portfolio-card" elevation={4} onClick={() => setLightboxUrl(url)}>
-                  <CardMedia component="img" image={url} alt="Image générée" />
-                </Card>
+                <button
+                  key={id ?? url}
+                  type="button"
+                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
+                  onClick={() => setLightboxUrl(url)}
+                >
+                  <img src={url} alt="Image générée" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
+                </button>
               ))}
-            </Box>
+            </div>
           )}
-        </Paper>
+        </section>
 
-        <Dialog
-          open={Boolean(lightboxUrl)}
-          onClose={() => setLightboxUrl(null)}
-          maxWidth="lg"
-          fullWidth
-          PaperProps={{ className: 'lightbox-dialog' }}
-        >
-          <Box display="flex" justifyContent="flex-end" pr={1} pt={1}>
-            <IconButton aria-label="Fermer" onClick={() => setLightboxUrl(null)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-          <DialogContent>
-            {lightboxUrl && (
-              <CardMedia
-                component="img"
-                image={lightboxUrl}
+        {lightboxUrl && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setLightboxUrl(null)}
+          >
+            <div
+              className="relative w-full max-w-5xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-slate-900 shadow-lg transition hover:bg-white"
+                aria-label="Fermer"
+                onClick={() => setLightboxUrl(null)}
+              >
+                <CloseIcon className="h-4 w-4" />
+              </button>
+              <img
+                src={lightboxUrl}
                 alt="Aperçu"
-                className="lightbox-image"
+                className="max-h-[80vh] w-full rounded-2xl object-contain"
               />
-            )}
-          </DialogContent>
-        </Dialog>
-      </Container>
+            </div>
+          </div>
+        )}
+      </main>
     )
   }
 
   return (
-    <Container maxWidth="md" className="app-shell">
-      <Box className="bg-blob blob1" aria-hidden />
-      <Box className="bg-blob blob2" aria-hidden />
+    <main className={`${containerMd} ${appShell}`}>
+      <div className="pointer-events-none absolute right-[-120px] top-[-60px] h-[320px] w-[320px] rounded-full bg-[rgb(var(--brand-500)/0.28)] blur-[48px] opacity-70" aria-hidden />
+      <div className="pointer-events-none absolute bottom-[-80px] left-[-100px] h-[280px] w-[280px] rounded-full bg-[rgba(151,151,151,0.22)] blur-[48px] opacity-70" aria-hidden />
 
-      <Box className="hero">
-        <Chip label="Match ton Avenir" color="primary" className="chip" />
-        <Typography variant="h2" component="h1" className="hero-title">
+      <section className={heroClass}>
+        <span className={chipClass}>Match ton Avenir</span>
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
           JE CRÉE MON AVATAR – MATCH TON AVENIR
-        </Typography>
-        <Typography variant="h5" component="h2" className="hero-subtitle">
-          Et si tu pouvais rencontrer ton futur toi ?
-        </Typography>
-        <Typography variant="body1" className="hero-text">
+        </h1>
+        <p className="text-lg font-semibold text-slate-900">Et si tu pouvais rencontrer ton futur toi ?</p>
+        <p className="text-sm text-slate-600 sm:text-base">
           Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 à 10 minutes
           pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
           compétences, de tes expériences sportives et de tes centres d’intérêt.
-        </Typography>
-        <Button variant="outlined" onClick={goToPortfolio} sx={{ mt: 1 }}>
-          Ouvrir le portfolio des images
-        </Button>
-      </Box>
+        </p>
+        {(step === 0 || isLastStep) && (
+          <button className={buttonOutline} onClick={goToPortfolio}>
+            Ouvrir la galerie des images
+          </button>
+        )}
+      </section>
 
-      <Paper elevation={6} className="panel">
-        <Stack spacing={3}>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="subtitle1" fontWeight={600}>
+      <section className={panelClass}>
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-slate-700">
               Étape {step + 1} / {totalSteps} — {formSteps[step].label}
-            </Typography>
-            <Button size="small" onClick={() => setStep(0)} disabled={step === 0}>
+            </p>
+            <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
               Revenir au début
-            </Button>
-          </Box>
+            </button>
+          </div>
 
           {formSteps[step].content}
 
-          <Divider />
+          <div className="h-px bg-slate-200/80" />
 
-          <Stack direction="row" spacing={2} justifyContent="space-between" alignItems="center">
-            <Button variant="outlined" onClick={goPrev} disabled={step === 0}>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
               Précédent
-            </Button>
-            <Stack direction="row" spacing={2} alignItems="center">
+            </button>
+            <div className="flex flex-wrap items-center gap-3">
               {!currentStepValid && validationMessage[currentStepId] && (
-                <Typography variant="body2" color="error" sx={{ mr: 1 }}>
+                <p className="text-sm text-red-600">
                   {validationMessage[currentStepId]}
-                </Typography>
+                </p>
               )}
               {error && (
-                <Alert severity="error" sx={{ mr: 2 }}>
+                <div className={errorBoxClass}>
                   {error}
-                </Alert>
+                </div>
               )}
               {isLastStep ? (
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                size="large"
-                className="primary-button"
-                onClick={handleGenerate}
-                disabled={loading}
-              >
-                Générer mon avatar (DALL·E)
-              </Button>
-              <Button variant="outlined" size="large" onClick={handleGenerateGoogle} disabled={loading}>
-                Générer avec Google
-              </Button>
-            </Stack>
-          ) : (
-            <Button variant="contained" onClick={goNext} disabled={!currentStepValid}>
-              Étape suivante
-            </Button>
-          )}
-              {loading && <CircularProgress size={24} />}
-            </Stack>
-          </Stack>
-        </Stack>
-      </Paper>
-    </Container>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    className={buttonPrimaryLarge}
+                    onClick={handleGenerate}
+                    disabled={loading}
+                  >
+                    Générer mon avatar (DALL·E)
+                  </button>
+                  <button
+                    className={buttonOutline}
+                    onClick={handleGenerateGoogle}
+                    disabled={loading}
+                  >
+                    Générer avec Google
+                  </button>
+                </div>
+              ) : (
+                <button className={buttonPrimary} onClick={goNext} disabled={!currentStepValid}>
+                  Étape suivante
+                </button>
+              )}
+              {loading && (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   )
 }
 
