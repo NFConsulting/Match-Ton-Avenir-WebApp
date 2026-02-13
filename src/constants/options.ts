@@ -16,7 +16,7 @@ export const emotional: Option[] = [
 
 export const social: Option[] = [
   { label: 'Communication', helper: '« Passe ! à gauche ! »' },
-  { label: 'Coopération', helper: 'se placer, se relayer, aider un coéquipier' },
+  { label: 'Coopération', helper: 'Respect des consignes, se placer, se relayer, aider un coéquipier' },
   { label: 'Leadership', helper: 'encourager, motiver, donner une impulsion positive au groupe' },
   { label: 'Empathie', helper: "tenir compte du niveau et de l'état des autres joueurs" },
 ]
@@ -37,11 +37,22 @@ export const developOptions: Option[] = [
 ]
 
 export const interests: Option[] = [
-  { label: 'Numérique / technologie' },
-  { label: 'Création (design, vidéo, écriture, musique…)' },
-  { label: 'Organisation / gestion de projets' },
-  { label: 'Sciences / logique / recherche' },
-  { label: 'Activités manuelles / terrain' },
+  { label: 'Numérique/technologie (informatique, IA, apps…)' },
+  { label: 'Création/arts (dessin, musique, vidéo, écriture…)' },
+  { label: 'Sciences & recherche (logique, expériences, curiosité)' },
+  { label: 'Organisation & projets (planification, coordination)' },
+  { label: 'Bricolage & activités pratiques' },
+  { label: 'Santé & bien-être' },
+  { label: 'Aider les autres / solidarité' },
+  { label: 'Commerce, communication & marketing' },
+  { label: 'Environnement & nature' },
+  { label: 'Industrie, bâtiment & haute technologie' },
+  { label: 'Style, design & esthétique' },
+  { label: 'Cuisine, hôtellerie & restauration' },
+  { label: 'Sport & activités physiques' },
+  { label: 'Médias, journalisme & audiovisuel' },
+  { label: 'Droit, politique & société' },
+  { label: 'Entrepreneuriat & innovation' },
 ]
 
 export const avatarPostures = [
@@ -54,4 +65,12 @@ export const avatarPostures = [
 
 export const avatarStyles = ['Décontracté', 'Sport', 'Créatif', 'Professionnel', 'Futuriste']
 
-export const avatarTeints = ['Clair', 'Moyen', 'Foncé', 'Stylisé', 'Peu importe']
+export const avatarTeints = [
+  'Très clair',
+  'Clair',
+  'Moyen',
+  'Foncé',
+  'Très foncé',
+  'Stylisé / fantaisie',
+  'Peu importe',
+]

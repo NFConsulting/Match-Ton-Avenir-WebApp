@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ComponentProps } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import AvatarSection from './components/AvatarSection'
 import CheckboxList from './components/CheckboxList'
 import JobsSection from './components/JobsSection'
@@ -13,6 +13,14 @@ import {
 import { fetchImageUrls, generateImage, generateImageGoogle } from './services/imageService'
 import { buildPrompt } from './utils/prompt'
 import type { CachedUrl, PromptInput } from './types'
+
+const MAX_STRENGTHS = 5
+const MAX_DEVELOP = 3
+const MAX_INTERESTS = 3
+const strengthLabels = [...cognitive, ...emotional, ...social].map((option) => option.label)
+const strengthLabelSet = new Set(strengthLabels)
+const developLabels = developOptions.map((option) => option.label)
+const developLabelSet = new Set(developLabels)
 
 const CloseIcon = (props: ComponentProps<'svg'>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
@@ -53,6 +61,7 @@ const spinner = (
 )
 
 const errorBoxClass = 'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'
+const GALLERY_PAGE_SIZE = 12
 
 function App() {
   const [route, setRoute] = useState<{ view: 'form' | 'portfolio' | 'single'; imageId?: string }>(() => {
@@ -65,7 +74,7 @@ function App() {
   })
   const [strengthsSelected, setStrengthsSelected] = useState<Record<string, boolean>>({})
   const [developSelected, setDevelopSelected] = useState<Record<string, boolean>>({})
-  const [jobs, setJobs] = useState<string[]>(['', '', '', '', ''])
+  const [jobs, setJobs] = useState<string[]>(['', '', ''])
   const [exploring, setExploring] = useState(false)
   const [avatarGender, setAvatarGender] = useState('')
   const [avatarExpression, setAvatarExpression] = useState('')
@@ -89,18 +98,66 @@ function App() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [singleImageUrl, setSingleImageUrl] = useState<string | null>(null)
   const [singleImageError, setSingleImageError] = useState<string | null>(null)
+  const [showValidation, setShowValidation] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const observerRef = useRef<IntersectionObserver | null>(null)
 
   const toggleStrength = (label: string) =>
-    setStrengthsSelected((prev) => ({
-      ...prev,
-      [label]: !prev[label],
-    }))
+    setStrengthsSelected((prev) => {
+      const isSelected = Boolean(prev[label])
+      if (isSelected) {
+        return {
+          ...prev,
+          [label]: false,
+        }
+      }
+
+      if (!strengthLabelSet.has(label)) {
+        return {
+          ...prev,
+          [label]: true,
+        }
+      }
+
+      const selectedStrengths = strengthLabels.filter((item) => prev[item]).length
+      if (selectedStrengths >= MAX_STRENGTHS) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [label]: true,
+      }
+    })
 
   const toggleDevelop = (label: string) =>
-    setDevelopSelected((prev) => ({
-      ...prev,
-      [label]: !prev[label],
-    }))
+    setDevelopSelected((prev) => {
+      const isSelected = Boolean(prev[label])
+      if (isSelected) {
+        return {
+          ...prev,
+          [label]: false,
+        }
+      }
+
+      if (!developLabelSet.has(label)) {
+        return {
+          ...prev,
+          [label]: true,
+        }
+      }
+
+      const selectedDevelop = developLabels.filter((item) => prev[item]).length
+      if (selectedDevelop >= MAX_DEVELOP) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [label]: true,
+      }
+    })
 
   const togglePosture = (label: string) =>
     setChosenPostures((prev) => ({
@@ -131,6 +188,7 @@ function App() {
   const hasCognitive = counts.cognitive > 0
   const hasEmotional = counts.emotional > 0
   const hasSocial = counts.social > 0
+  const strengthSelectionCount = counts.cognitive + counts.emotional + counts.social
   const hasStrengthAnswers = hasCognitive && hasEmotional && hasSocial
   const hasDevelopAnswers = counts.develop > 0
   const hasInterestAnswers = counts.interests > 0
@@ -139,15 +197,15 @@ function App() {
   const hasAvatarExpression = Boolean(avatarExpression)
   const hasAvatarPosture = Object.values(chosenPostures).some(Boolean)
   const hasAvatarHair = Boolean(hair)
+  const hasAvatarTeint = Boolean(avatarTeint)
   const hasAvatarStyle = Object.values(chosenStyles).some(Boolean)
-  const hasAvatarWords = avatarWords.some((w) => w.trim().length > 0)
   const hasAvatarAnswer =
     hasAvatarGender &&
     hasAvatarExpression &&
     hasAvatarPosture &&
     hasAvatarHair &&
-    hasAvatarStyle &&
-    hasAvatarWords
+    hasAvatarTeint &&
+    hasAvatarStyle
 
   const isStepValid = (stepId: string) => {
     switch (stepId) {
@@ -172,7 +230,7 @@ function App() {
     interests: 'Choisis au moins un centre d’intérêt.',
     jobs: 'Renseigne un métier ou coche “Je suis encore en exploration”.',
     avatar:
-      'Renseigne genre, expression, posture, cheveux, style vestimentaire et au moins un mot-clé pour l’avatar.',
+      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour l’avatar.',
   }
 
   const buildPromptInput = (): PromptInput => ({
@@ -264,9 +322,29 @@ function App() {
 
   useEffect(() => {
     if (view === 'portfolio') {
+      setVisibleCount(GALLERY_PAGE_SIZE)
       void loadPortfolio()
     }
   }, [view, portfolioReloadKey])
+
+  useEffect(() => {
+    if (view !== 'portfolio') return
+    const target = loadMoreRef.current
+    if (!target) return
+
+    observerRef.current?.disconnect()
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisibleCount((prev) => Math.min(prev + GALLERY_PAGE_SIZE, imageUrls.length))
+        }
+      },
+      { rootMargin: '200px' }
+    )
+    observerRef.current.observe(target)
+
+    return () => observerRef.current?.disconnect()
+  }, [view, imageUrls.length])
 
   useEffect(() => {
     const onPopState = () => {
@@ -302,7 +380,13 @@ function App() {
                   <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
-                  <CheckboxList options={cognitive} selected={strengthsSelected} onToggle={toggleStrength} />
+                  <CheckboxList
+                    options={cognitive}
+                    selected={strengthsSelected}
+                    onToggle={toggleStrength}
+                    maxSelectable={MAX_STRENGTHS}
+                    selectedCount={strengthSelectionCount}
+                  />
                 </div>
               </div>
               <div className="h-px bg-slate-200/80" />
@@ -312,7 +396,13 @@ function App() {
                   <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
-                  <CheckboxList options={emotional} selected={strengthsSelected} onToggle={toggleStrength} />
+                  <CheckboxList
+                    options={emotional}
+                    selected={strengthsSelected}
+                    onToggle={toggleStrength}
+                    maxSelectable={MAX_STRENGTHS}
+                    selectedCount={strengthSelectionCount}
+                  />
                 </div>
               </div>
               <div className="h-px bg-slate-200/80" />
@@ -322,7 +412,13 @@ function App() {
                   <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
-                  <CheckboxList options={social} selected={strengthsSelected} onToggle={toggleStrength} />
+                  <CheckboxList
+                    options={social}
+                    selected={strengthsSelected}
+                    onToggle={toggleStrength}
+                    maxSelectable={MAX_STRENGTHS}
+                    selectedCount={strengthSelectionCount}
+                  />
                 </div>
               </div>
             </div>
@@ -334,7 +430,7 @@ function App() {
         label: 'Compétences à développer',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>Compétences que j’aimerais développer davantage</p>
+            <p className={eyebrowClass}>Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
@@ -343,7 +439,12 @@ function App() {
               <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
             </h3>
             <div className="mt-3">
-              <CheckboxList options={developOptions} selected={developSelected} onToggle={toggleDevelop} />
+              <CheckboxList
+                options={developOptions}
+                selected={developSelected}
+                onToggle={toggleDevelop}
+                maxSelectable={MAX_DEVELOP}
+              />
             </div>
           </div>
         ),
@@ -362,7 +463,12 @@ function App() {
               <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
             </h3>
             <div className="mt-3">
-              <CheckboxList options={interests} selected={strengthsSelected} onToggle={toggleStrength} />
+              <CheckboxList
+                options={interests}
+                selected={strengthsSelected}
+                onToggle={toggleStrength}
+                maxSelectable={MAX_INTERESTS}
+              />
             </div>
           </div>
         ),
@@ -372,9 +478,9 @@ function App() {
         label: 'Métiers explorés',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>3. MÉTIERS QUE J’AI DÉCOUVERTS AUJOURD’HUI</p>
+            <p className={eyebrowClass}>3. MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
             <p className="mt-2 text-sm text-slate-600">
-              Écris 1 à 5 métiers qui t’ont le plus intéressé
+              Écris 1 à 3 métiers qui t’ont le plus intéressé
             </p>
             <div className="mt-4">
               <JobsSection
@@ -523,6 +629,17 @@ function App() {
   const goPrev = () => setStep((prev) => Math.max(prev - 1, 0))
   const currentStepId = formSteps[step].id
   const currentStepValid = isStepValid(currentStepId)
+  const handleNext = () => {
+    if (currentStepValid) {
+      goNext()
+      return
+    }
+    setShowValidation(true)
+  }
+
+  useEffect(() => {
+    setShowValidation(false)
+  }, [step])
 
   // Single image page: try to resolve url by id
   useEffect(() => {
@@ -640,23 +757,33 @@ function App() {
           {portfolioLoading ? (
             spinner
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
-              {imageUrls.length === 0 && (
-                <p className="text-sm text-slate-500">
-                  Il n&apos;y a pas encore d&apos;image pour le moment :(
-                </p>
+            <>
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+                {imageUrls.length === 0 && (
+                  <p className="text-sm text-slate-500">
+                    Il n&apos;y a pas encore d&apos;image pour le moment :(
+                  </p>
+                )}
+                {imageUrls.slice(0, visibleCount).map(({ id, url }) => (
+                  <button
+                    key={id ?? url}
+                    type="button"
+                    className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
+                    onClick={() => setLightboxUrl(url)}
+                  >
+                    <img
+                      src={url}
+                      alt="Image générée"
+                      loading="lazy"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+                    />
+                  </button>
+                ))}
+              </div>
+              {visibleCount < imageUrls.length && (
+                <div ref={loadMoreRef} className="h-8" />
               )}
-              {imageUrls.map(({ id, url }) => (
-                <button
-                  key={id ?? url}
-                  type="button"
-                  className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(0,0,0,0.18)]"
-                  onClick={() => setLightboxUrl(url)}
-                >
-                  <img src={url} alt="Image générée" className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" />
-                </button>
-              ))}
-            </div>
+            </>
           )}
         </section>
 
@@ -707,18 +834,13 @@ function App() {
           pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
           compétences, de tes expériences sportives et de tes centres d’intérêt.
         </p>
-        {(step === 0 || isLastStep) && (
-          <button className={buttonOutline} onClick={goToPortfolio}>
-            Ouvrir la galerie des images
-          </button>
-        )}
       </section>
 
       <section className={panelClass}>
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-700">
-              Étape {step + 1} / {totalSteps} — {formSteps[step].label}
+              Étape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
               Revenir au début
@@ -730,11 +852,18 @@ function App() {
           <div className="h-px bg-slate-200/80" />
 
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
-              Précédent
-            </button>
             <div className="flex flex-wrap items-center gap-3">
-              {!currentStepValid && validationMessage[currentStepId] && (
+              <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
+                Précédent
+              </button>
+              {(step === 0 || isLastStep) && (
+                <button className={buttonOutline} onClick={goToPortfolio}>
+                  Ouvrir la galerie des images
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              {showValidation && !currentStepValid && validationMessage[currentStepId] && (
                 <p className="text-sm text-red-600">
                   {validationMessage[currentStepId]}
                 </p>
@@ -762,7 +891,7 @@ function App() {
                   </button>
                 </div>
               ) : (
-                <button className={buttonPrimary} onClick={goNext} disabled={!currentStepValid}>
+                <button className={buttonPrimary} onClick={handleNext}>
                   Étape suivante
                 </button>
               )}

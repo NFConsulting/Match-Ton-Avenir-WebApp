@@ -110,7 +110,7 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">Teint de l’avatar (optionnel)</p>
+      <p className="text-sm font-semibold text-slate-800">Teint de l’avatar</p>
       <div className="flex flex-wrap gap-3">
         {avatarTeints.map((option) => (
           <label
