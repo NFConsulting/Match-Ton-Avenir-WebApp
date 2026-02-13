@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
+﻿import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import AvatarSection from './components/AvatarSection'
 import CheckboxList from './components/CheckboxList'
 import JobsSection from './components/JobsSection'
@@ -10,7 +10,7 @@ import {
   interests,
   social,
 } from './constants/options'
-import { fetchImageUrls, generateImage, generateImageGoogle } from './services/imageService'
+import { fetchImageUrlsPage, generateImage, generateImageGoogle } from './services/imageService'
 import { buildPrompt } from './utils/prompt'
 import type { CachedUrl, PromptInput } from './types'
 
@@ -99,7 +99,9 @@ function App() {
   const [singleImageUrl, setSingleImageUrl] = useState<string | null>(null)
   const [singleImageError, setSingleImageError] = useState<string | null>(null)
   const [showValidation, setShowValidation] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(GALLERY_PAGE_SIZE)
+  const [portfolioAfterId, setPortfolioAfterId] = useState(0)
+  const [portfolioHasMore, setPortfolioHasMore] = useState(true)
+  const [portfolioLoadingMore, setPortfolioLoadingMore] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
 
@@ -225,12 +227,12 @@ function App() {
   }
 
   const validationMessage: Record<string, string> = {
-    strengths: 'Choisis au moins 1 compétence dans chaque catégorie : cognitive, émotionnelle et sociale.',
-    develop: 'Sélectionne au moins une compétence à développer.',
-    interests: 'Choisis au moins un centre d’intérêt.',
-    jobs: 'Renseigne un métier ou coche “Je suis encore en exploration”.',
+    strengths: 'Choisis au moins 1 compÃ©tence dans chaque catÃ©gorie : cognitive, Ã©motionnelle et sociale.',
+    develop: 'SÃ©lectionne au moins une compÃ©tence Ã  dÃ©velopper.',
+    interests: 'Choisis au moins un centre dâ€™intÃ©rÃªt.',
+    jobs: 'Renseigne un mÃ©tier ou coche â€œJe suis encore en explorationâ€.',
     avatar:
-      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour l’avatar.',
+      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour lâ€™avatar.',
   }
 
   const buildPromptInput = (): PromptInput => ({
@@ -265,7 +267,7 @@ function App() {
 
     const cleanedPrompt = prompt.trim()
     if (!cleanedPrompt) {
-      setError('Complète au moins une section ou saisis un prompt avant de lancer la génération.')
+      setError('ComplÃ¨te au moins une section ou saisis un prompt avant de lancer la gÃ©nÃ©ration.')
       return
     }
 
@@ -305,46 +307,85 @@ function App() {
     await submitPrompt(generatedPrompt)
   }
 
-  const loadPortfolio = async () => {
-    setPortfolioError(null)
-    setPortfolioLoading(true)
-    try {
-      const urls = await fetchImageUrls()
-      setImageUrls(urls)
-    } catch (fetchError) {
-      const rawMessage = fetchError instanceof Error ? fetchError.message : ''
-      const message = friendlyMessage(rawMessage, 'Impossible de récupérer les images.')
-      setPortfolioError(message)
-    } finally {
-      setPortfolioLoading(false)
-    }
-  }
+  const loadPortfolioPage = useCallback(
+    async (targetAfterId: number, replace = false) => {
+      setPortfolioError(null)
+
+      if (replace) {
+        setPortfolioLoading(true)
+      } else {
+        setPortfolioLoadingMore(true)
+      }
+
+      try {
+        const result = await fetchImageUrlsPage({
+          afterId: targetAfterId,
+          limit: GALLERY_PAGE_SIZE,
+          includeUrl: true,
+        })
+
+        setImageUrls((prev) => {
+          const base = replace ? [] : prev
+          const unique = new Map<string, CachedUrl>()
+
+          for (const item of base) {
+            unique.set(item.id || item.url, item)
+          }
+          for (const item of result.items) {
+            unique.set(item.id || item.url, item)
+          }
+
+          return Array.from(unique.values())
+        })
+
+        setPortfolioAfterId(result.nextAfterId)
+        setPortfolioHasMore(result.hasMore)
+      } catch (fetchError) {
+        const rawMessage = fetchError instanceof Error ? fetchError.message : ''
+        const message = friendlyMessage(rawMessage, 'Impossible de recuperer les images.')
+        setPortfolioError(message)
+      } finally {
+        if (replace) {
+          setPortfolioLoading(false)
+        } else {
+          setPortfolioLoadingMore(false)
+        }
+      }
+    },
+    []
+  )
+
+  const loadPortfolio = useCallback(async () => {
+    setImageUrls([])
+    setPortfolioAfterId(0)
+    setPortfolioHasMore(true)
+    await loadPortfolioPage(0, true)
+  }, [loadPortfolioPage])
 
   useEffect(() => {
     if (view === 'portfolio') {
-      setVisibleCount(GALLERY_PAGE_SIZE)
       void loadPortfolio()
     }
-  }, [view, portfolioReloadKey])
+  }, [view, portfolioReloadKey, loadPortfolio])
 
   useEffect(() => {
-    if (view !== 'portfolio') return
+    if (view !== 'portfolio' || !portfolioHasMore || portfolioLoading || portfolioLoadingMore) return
     const target = loadMoreRef.current
     if (!target) return
 
     observerRef.current?.disconnect()
     observerRef.current = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setVisibleCount((prev) => Math.min(prev + GALLERY_PAGE_SIZE, imageUrls.length))
-        }
+        if (!entries[0]?.isIntersecting) return
+        if (portfolioLoading || portfolioLoadingMore || !portfolioHasMore) return
+        void loadPortfolioPage(portfolioAfterId)
       },
       { rootMargin: '200px' }
     )
     observerRef.current.observe(target)
 
     return () => observerRef.current?.disconnect()
-  }, [view, imageUrls.length])
+  }, [view, portfolioHasMore, portfolioLoading, portfolioLoadingMore, portfolioAfterId, loadPortfolioPage])
 
   useEffect(() => {
     const onPopState = () => {
@@ -366,18 +407,18 @@ function App() {
     () => [
       {
         id: 'strengths',
-        label: 'Ce que j’ai montré pendant le sport',
+        label: 'Ce que jâ€™ai montrÃ© pendant le sport',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>1. CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
+            <p className={eyebrowClass}>1. CE QUE Jâ€™AI MONTRÃ‰ PENDANT LE SPORT</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 3 à 5 compétences que tu as le plus montrées
+              Choisis 3 Ã  5 compÃ©tences que tu as le plus montrÃ©es
             </p>
             <div className="mt-5 space-y-6">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences cognitives — Esprit clair
-                  <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
+                  CompÃ©tences cognitives â€” Esprit clair
+                  <span className={`${countChipClass} ml-3`}>{counts.cognitive} sÃ©lection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -392,8 +433,8 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences émotionnelles — Cœur calme
-                  <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
+                  CompÃ©tences Ã©motionnelles â€” CÅ“ur calme
+                  <span className={`${countChipClass} ml-3`}>{counts.emotional} sÃ©lection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -408,8 +449,8 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences sociales — Bras ouverts
-                  <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
+                  CompÃ©tences sociales â€” Bras ouverts
+                  <span className={`${countChipClass} ml-3`}>{counts.social} sÃ©lection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -427,16 +468,16 @@ function App() {
       },
       {
         id: 'develop',
-        label: 'Compétences à développer',
+        label: 'CompÃ©tences Ã  dÃ©velopper',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
+            <p className={eyebrowClass}>Tes compÃ©tences sont Ã©volutives, quâ€™aimerais tu dÃ©velopper davantage ?</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 1 à 3 compétences que tu souhaites améliorer
+              Choisis 1 Ã  3 compÃ©tences que tu souhaites amÃ©liorer
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              Sélections
-              <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
+              SÃ©lections
+              <span className={`${countChipClass} ml-3`}>{counts.develop} sÃ©lection(s)</span>
             </h3>
             <div className="mt-3">
               <CheckboxList
@@ -451,16 +492,16 @@ function App() {
       },
       {
         id: 'interests',
-        label: 'Centres d’intérêt',
+        label: 'Centres dâ€™intÃ©rÃªt',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>2. MES CENTRES D’INTÉRÊT</p>
+            <p className={eyebrowClass}>2. MES CENTRES Dâ€™INTÃ‰RÃŠT</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 1 à 3 centres d’intérêt que tu préfères
+              Choisis 1 Ã  3 centres dâ€™intÃ©rÃªt que tu prÃ©fÃ¨res
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              Sélections
-              <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
+              SÃ©lections
+              <span className={`${countChipClass} ml-3`}>{counts.interests} sÃ©lection(s)</span>
             </h3>
             <div className="mt-3">
               <CheckboxList
@@ -475,12 +516,12 @@ function App() {
       },
       {
         id: 'jobs',
-        label: 'Métiers explorés',
+        label: 'MÃ©tiers explorÃ©s',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>3. MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
+            <p className={eyebrowClass}>3. MÃ‰TIERS SUR LESQUELS JE ME PROJETTE :</p>
             <p className="mt-2 text-sm text-slate-600">
-              Écris 1 à 3 métiers qui t’ont le plus intéressé
+              Ã‰cris 1 Ã  3 mÃ©tiers qui tâ€™ont le plus intÃ©ressÃ©
             </p>
             <div className="mt-4">
               <JobsSection
@@ -499,12 +540,12 @@ function App() {
       },
       {
         id: 'avatar',
-        label: 'Détails de l’avatar',
+        label: 'DÃ©tails de lâ€™avatar',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>4. À QUOI RESSEMBLE MON AVATAR</p>
+            <p className={eyebrowClass}>4. Ã€ QUOI RESSEMBLE MON AVATAR</p>
             <p className="mt-2 text-sm text-slate-600">
-              Imagine ton futur toi et complète les infos ci-dessous
+              Imagine ton futur toi et complÃ¨te les infos ci-dessous
             </p>
 
             <div className="mt-5">
@@ -534,7 +575,7 @@ function App() {
       },
       {
         id: 'preview',
-        label: 'Prévisualisation & génération',
+        label: 'PrÃ©visualisation & gÃ©nÃ©ration',
         content: (
           <div className="space-y-4">
             <PromptPreview
@@ -545,9 +586,9 @@ function App() {
             />
             {imageUrl && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
-                <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+                <img src={imageUrl} alt="Avatar gÃ©nÃ©rÃ©" className="h-full w-full object-cover" />
                 <div className="space-y-1 px-5 py-4">
-                  <p className="text-base font-semibold text-slate-900">Image renvoyée par l’API</p>
+                  <p className="text-base font-semibold text-slate-900">Image renvoyÃ©e par lâ€™API</p>
                   {imageId && (
                     <p className="text-sm text-slate-600">
                       ID : {imageId}
@@ -622,7 +663,7 @@ function App() {
     setView('portfolio')
     setLightboxUrl(null)
     setImageUrls([])
-    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrée
+    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrÃ©e
   }
 
   const goNext = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1))
@@ -660,16 +701,41 @@ function App() {
       setSingleImageError(null)
       setSingleImageUrl(null)
       try {
-        const urls = imageUrls.length === 0 ? await fetchImageUrls() : imageUrls
-        const found = urls.find((u) => u.id === route.imageId)
-        if (found) {
-          setImageUrls(urls) // keep cache
-          setSingleImageUrl(found.url)
-        } else {
-          setSingleImageError('Image introuvable avec cet identifiant.')
+        if (imageUrls.length > 0) {
+          const found = imageUrls.find((u) => u.id === route.imageId)
+          if (found) {
+            setSingleImageUrl(found.url)
+            return
+          }
         }
+
+        let page = 1
+        let hasMore = true
+        let afterId = 0
+        const searchCache: CachedUrl[] = []
+
+        while (hasMore && page <= 10) {
+          const result = await fetchImageUrlsPage({ afterId, limit: 50, includeUrl: true })
+          searchCache.push(...result.items)
+
+          const found = result.items.find((u) => u.id === route.imageId)
+          if (found) {
+            setImageUrls(searchCache)
+            setSingleImageUrl(found.url)
+            return
+          }
+
+          hasMore = result.hasMore
+          if (result.nextAfterId <= afterId) {
+            break
+          }
+          afterId = result.nextAfterId
+          page += 1
+        }
+
+        setSingleImageError('Image introuvable avec cet identifiant.')
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Impossible de récupérer l’image.'
+        const msg = err instanceof Error ? err.message : 'Impossible de rÃ©cupÃ©rer lâ€™image.'
         setSingleImageError(msg)
       }
     }
@@ -686,11 +752,11 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Aperçu de l’image
+            AperÃ§u de lâ€™image
           </h1>
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
-              Revenir au générateur
+              Revenir au gÃ©nÃ©rateur
             </button>
             <button className={buttonOutline} onClick={goToPortfolio}>
               Afficher la galerie des images
@@ -707,7 +773,7 @@ function App() {
           {!singleImageUrl && !singleImageError && spinner}
           {singleImageUrl && (
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-              <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+              <img src={singleImageUrl} alt="Avatar gÃ©nÃ©rÃ©" className="h-full w-full object-cover" />
             </div>
           )}
         </section>
@@ -724,10 +790,10 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Galerie des images générées
+            Galerie des images gÃ©nÃ©rÃ©es
           </h1>
           <p className="text-sm text-slate-600">
-            Liste de toutes les images générées
+            Liste de toutes les images gÃ©nÃ©rÃ©es
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <button
@@ -736,14 +802,14 @@ function App() {
                 goToGenerator()
               }}
             >
-              Retour au générateur
+              Retour au gÃ©nÃ©rateur
             </button>
             <button
               className={buttonPrimary}
               onClick={() => setPortfolioReloadKey((prev) => prev + 1)}
               disabled={portfolioLoading}
             >
-              Rafraîchir la liste
+              RafraÃ®chir la liste
             </button>
           </div>
         </section>
@@ -764,7 +830,7 @@ function App() {
                     Il n&apos;y a pas encore d&apos;image pour le moment :(
                   </p>
                 )}
-                {imageUrls.slice(0, visibleCount).map(({ id, url }) => (
+                {imageUrls.map(({ id, url }) => (
                   <button
                     key={id ?? url}
                     type="button"
@@ -773,16 +839,19 @@ function App() {
                   >
                     <img
                       src={url}
-                      alt="Image générée"
+                      alt="Image gÃ©nÃ©rÃ©e"
                       loading="lazy"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                     />
                   </button>
                 ))}
               </div>
-              {visibleCount < imageUrls.length && (
-                <div ref={loadMoreRef} className="h-8" />
+              {portfolioLoadingMore && (
+                <div className="flex justify-center py-3">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
+                </div>
               )}
+              {portfolioHasMore && <div ref={loadMoreRef} className="h-8" />}
             </>
           )}
         </section>
@@ -808,7 +877,7 @@ function App() {
               </button>
               <img
                 src={lightboxUrl}
-                alt="Aperçu"
+                alt="AperÃ§u"
                 className="max-h-[80vh] w-full rounded-2xl object-contain"
               />
             </div>
@@ -826,13 +895,13 @@ function App() {
       <section className={heroClass}>
         <span className={chipClass}>Match ton Avenir</span>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-          JE CRÉE MON AVATAR – MATCH TON AVENIR
+          JE CRÃ‰E MON AVATAR â€“ MATCH TON AVENIR
         </h1>
         <p className="text-lg font-semibold text-slate-900">Et si tu pouvais rencontrer ton futur toi ?</p>
         <p className="text-sm text-slate-600 sm:text-base">
-          Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 à 10 minutes
-          pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
-          compétences, de tes expériences sportives et de tes centres d’intérêt.
+          Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 Ã  10 minutes
+          pour rÃ©pondre aux questions, et dÃ©couvre ton avatar du futur, crÃ©Ã© Ã  partir de tes
+          compÃ©tences, de tes expÃ©riences sportives et de tes centres dâ€™intÃ©rÃªt.
         </p>
       </section>
 
@@ -840,10 +909,10 @@ function App() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-700">
-              Étape {step + 1} / {totalSteps}
+              Ã‰tape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
-              Revenir au début
+              Revenir au dÃ©but
             </button>
           </div>
 
@@ -854,7 +923,7 @@ function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
-                Précédent
+                PrÃ©cÃ©dent
               </button>
               {(step === 0 || isLastStep) && (
                 <button className={buttonOutline} onClick={goToPortfolio}>
@@ -880,19 +949,19 @@ function App() {
                     onClick={handleGenerate}
                     disabled={loading}
                   >
-                    Générer mon avatar (DALL·E)
+                    GÃ©nÃ©rer mon avatar (DALLÂ·E)
                   </button>
                   <button
                     className={buttonOutline}
                     onClick={handleGenerateGoogle}
                     disabled={loading}
                   >
-                    Générer avec Google
+                    GÃ©nÃ©rer avec Google
                   </button>
                 </div>
               ) : (
                 <button className={buttonPrimary} onClick={handleNext}>
-                  Étape suivante
+                  Ã‰tape suivante
                 </button>
               )}
               {loading && (
@@ -907,3 +976,4 @@ function App() {
 }
 
 export default App
+
