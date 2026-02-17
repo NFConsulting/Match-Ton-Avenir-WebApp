@@ -24,6 +24,9 @@ const urlsIncludeRaw = String(__ENV.URLS_INCLUDE_URL || 'true').toLowerCase();
 const URLS_INCLUDE_URL = !['0', 'false', 'no', 'off'].includes(urlsIncludeRaw);
 const urlsWalkRaw = String(__ENV.URLS_WALK_CURSOR || '').toLowerCase();
 const URLS_WALK_CURSOR = ['1', 'true', 'yes', 'on'].includes(urlsWalkRaw);
+const CUSTOM_PROMPT = String(__ENV.CUSTOM_PROMPT || '').trim();
+const FORCE_DEFAULT_PROMPT_RAW = String(__ENV.FORCE_DEFAULT_PROMPT || 'true').toLowerCase();
+const FORCE_DEFAULT_PROMPT = !['0', 'false', 'no', 'off'].includes(FORCE_DEFAULT_PROMPT_RAW);
 
 const IMAGE_URL = `${API_BASE_URL}/image`;
 const GOOGLE_URL = `${API_BASE_URL}/image/google`;
@@ -36,6 +39,28 @@ const PROMPTS = [
   'Avatar energie positive, tenue moderne, centres interet sciences',
   'Avatar entraide et communication, style visuel clair et net',
 ];
+
+const DEFAULT_IMAGE_PROMPT = `Crée un avatar inspirant représentant une personne jeune adulte (environ 30 ans) avec les
+traits physiques, compétences et centres d’intérêt suivants :
+Genre : Masculin
+Cheveux : dfdff
+Teint : Clair
+Expression du visage : Calme
+Posture : Relax / décontracté
+Style vestimentaire : Sport
+Mot(s) pour décrire l’avatar : dfdfdf
+Compétences et qualités :
+Compétences : Résolution de problèmes, Confiance en soi, Coopération, Pensée stratégique, Gestion du stress, Confiance en soi
+Centres d’intérêt : Commerce, communication & marketing
+Métiers possibles : à explorer
+
+Les compétences et centres d’intérêt doivent influencer l’apparence et les accessoires de l’avatar.
+Important : inclure du texte lisible en français dans l’image.
+Le texte doit être propre, net, correctement orthographié, sans lettres déformées.
+Utiliser une police simple sans-serif, en MAJUSCULES, avec fort contraste sur un fond uni.
+Limiter chaque libellé à 1 à 3 mots maximum.
+Ne pas inventer de texte hors des informations fournies ci-dessus.
+La personne est encore en exploration : proposer des métiers possibles variés.`;
 
 const apiSuccess = new Rate('api_success');
 const apiHasUrl = new Rate('api_has_url');
@@ -99,6 +124,12 @@ function waitForScheduledSlot() {
 }
 
 function pickPrompt() {
+  if (CUSTOM_PROMPT) {
+    return CUSTOM_PROMPT;
+  }
+  if (FORCE_DEFAULT_PROMPT) {
+    return DEFAULT_IMAGE_PROMPT;
+  }
   const index = exec.scenario.iterationInTest % PROMPTS.length;
   return PROMPTS[index];
 }

@@ -982,7 +982,7 @@ function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
-                ⬅️ Précédent
+                Précédent
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-3">
