@@ -257,8 +257,8 @@ function App() {
     return message
   }
 
-  const buildImageFilename = (candidateId?: string) => {
-    const normalizedId = (candidateId ?? '')
+  const buildImageFilename = (candidateId?: string | number | null) => {
+    const normalizedId = String(candidateId ?? '')
       .trim()
       .toLowerCase()
       .replace(/[^a-z0-9_-]+/g, '-')
@@ -272,39 +272,42 @@ function App() {
     return `match-ton-avenir-${dateStamp}.png`
   }
 
-  const handleDownloadImage = useCallback(async (targetUrl: string, candidateId?: string) => {
-    const url = targetUrl.trim()
-    if (!url) return
+  const handleDownloadImage = useCallback(
+    async (targetUrl: string | null | undefined, candidateId?: string | number | null) => {
+      const url = String(targetUrl ?? '').trim()
+      if (!url) return
 
-    const filename = buildImageFilename(candidateId)
+      const filename = buildImageFilename(candidateId)
 
-    const clickDownloadLink = (href: string, openInNewTab = false) => {
-      const link = document.createElement('a')
-      link.href = href
-      link.download = filename
-      link.rel = 'noopener'
-      if (openInNewTab) {
-        link.target = '_blank'
-      }
-      document.body.appendChild(link)
-      link.click()
-      link.remove()
-    }
-
-    try {
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error('download_failed')
+      const clickDownloadLink = (href: string, openInNewTab = false) => {
+        const link = document.createElement('a')
+        link.href = href
+        link.download = filename
+        link.rel = 'noopener'
+        if (openInNewTab) {
+          link.target = '_blank'
+        }
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
       }
 
-      const blob = await response.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      clickDownloadLink(blobUrl)
-      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
-    } catch {
-      clickDownloadLink(url, true)
-    }
-  }, [])
+      try {
+        const response = await fetch(url)
+        if (!response.ok) {
+          throw new Error('download_failed')
+        }
+
+        const blob = await response.blob()
+        const blobUrl = URL.createObjectURL(blob)
+        clickDownloadLink(blobUrl)
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+      } catch {
+        clickDownloadLink(url, true)
+      }
+    },
+    []
+  )
 
   const submitPrompt = async (
     prompt: string,
@@ -324,11 +327,12 @@ function App() {
     try {
       const data = await generator(cleanedPrompt)
       setImageUrl(data.url)
-      setImageId(data.id)
-      if (data.id) {
-        const newUrl = `/monImage/${data.id}`
+      const normalizedImageId = data.id !== undefined && data.id !== null ? String(data.id) : undefined
+      setImageId(normalizedImageId)
+      if (normalizedImageId) {
+        const newUrl = `/monImage/${normalizedImageId}`
         window.history.pushState({}, '', newUrl)
-        setRoute({ view: 'single', imageId: data.id })
+        setRoute({ view: 'single', imageId: normalizedImageId })
         setView('form') // align view state when switching to single
       }
     } catch (fetchError) {
@@ -690,7 +694,7 @@ function App() {
   const resetFormState = () => {
     setStrengthsSelected({})
     setDevelopSelected({})
-    setJobs(['', '', '', '', ''])
+    setJobs(['', '', ''])
     setExploring(false)
     setAvatarGender('')
     setAvatarExpression('')

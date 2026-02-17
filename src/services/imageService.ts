@@ -68,10 +68,11 @@ const callImageApi = async (url: string, prompt: string): Promise<ImageResponse>
   }
 
   const idFromUrl = extractImageId(data.url)
+  const idFromApi = data.id !== undefined && data.id !== null ? String(data.id) : undefined
 
   return {
     ...data,
-    id: data.id ?? idFromUrl,
+    id: idFromApi ?? idFromUrl,
   }
 }
 
