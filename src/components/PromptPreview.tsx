@@ -10,7 +10,7 @@ type PromptPreviewProps = {
 const PromptPreview = ({ prompt, onChange, onSend, loading }: PromptPreviewProps) => (
   <div className="space-y-3">
     <p className="text-sm font-semibold text-slate-800">
-      Prompt généré (envoyé à l’API)
+      🧠 Prompt généré (envoyé à l’API)
     </p>
     <textarea
       value={prompt}
@@ -26,7 +26,7 @@ const PromptPreview = ({ prompt, onChange, onSend, loading }: PromptPreviewProps
         onClick={onSend}
         disabled={loading}
       >
-        Envoyer ce prompt à l’API
+        📤 Envoyer ce prompt à l’API
       </button>
     </div>
   </div>

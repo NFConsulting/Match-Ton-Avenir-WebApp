@@ -456,17 +456,17 @@ function App() {
     () => [
       {
         id: 'strengths',
-        label: 'Ce que j’ai montré pendant le sport',
+        label: '🏅 Ce que j’ai montré pendant le sport',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>1. CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
+            <p className={eyebrowClass}>1. 🏅 CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 3 à 5 compétences que tu as le plus montrées
             </p>
             <div className="mt-5 space-y-6">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences cognitives — Esprit clair
+                  🧠 Compétences cognitives — Esprit clair
                   <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -482,7 +482,7 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences émotionnelles — Cœur calme
+                  ❤️ Compétences émotionnelles — Cœur calme
                   <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -498,7 +498,7 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  Compétences sociales — Bras ouverts
+                  🤝 Compétences sociales — Bras ouverts
                   <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -517,15 +517,15 @@ function App() {
       },
       {
         id: 'develop',
-        label: 'Compétences à développer',
+        label: '📈 Compétences à développer',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
+            <p className={eyebrowClass}>📈 Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              Sélections
+              ✅ Sélections
               <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
             </h3>
             <div className="mt-3">
@@ -541,15 +541,15 @@ function App() {
       },
       {
         id: 'interests',
-        label: 'Centres d’intérêt',
+        label: '💡 Centres d’intérêt',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>2. MES CENTRES D’INTÉRÊT</p>
+            <p className={eyebrowClass}>2. 💡 MES CENTRES D’INTÉRÊT</p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 centres d’intérêt que tu préfères
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              Sélections
+              ✅ Sélections
               <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
             </h3>
             <div className="mt-3">
@@ -565,10 +565,10 @@ function App() {
       },
       {
         id: 'jobs',
-        label: 'Métiers explorés',
+        label: '🧭 Métiers explorés',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>3. MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
+            <p className={eyebrowClass}>3. 🧭 MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
             <p className="mt-2 text-sm text-slate-600">
               Écris 1 à 3 métiers qui t’ont le plus intéressé
             </p>
@@ -589,10 +589,10 @@ function App() {
       },
       {
         id: 'avatar',
-        label: 'Détails de l’avatar',
+        label: '🧑‍🚀 Détails de l’avatar',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>4. À QUOI RESSEMBLE MON AVATAR</p>
+            <p className={eyebrowClass}>4. 🧑‍🚀 À QUOI RESSEMBLE MON AVATAR</p>
             <p className="mt-2 text-sm text-slate-600">
               Imagine ton futur toi et complète les infos ci-dessous
             </p>
@@ -624,7 +624,7 @@ function App() {
       },
       {
         id: 'preview',
-        label: 'Prévisualisation & génération',
+        label: '🎨 Prévisualisation & génération',
         content: (
           <div className="space-y-4">
             <PromptPreview
@@ -637,7 +637,7 @@ function App() {
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
                 <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 <div className="space-y-1 px-5 py-4">
-                  <p className="text-base font-semibold text-slate-900">Image renvoyée par l’API</p>
+                  <p className="text-base font-semibold text-slate-900">🖼️ Image renvoyée par l’API</p>
                   {imageId && (
                     <p className="text-sm text-slate-600">
                       ID : {imageId}
@@ -649,7 +649,7 @@ function App() {
                       className={buttonOutline}
                       onClick={() => void handleDownloadImage(imageUrl, imageId)}
                     >
-                      Télécharger l&apos;image
+                      ⬇️ Télécharger l&apos;image
                     </button>
                   </div>
                 </div>
@@ -803,11 +803,11 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Aperçu de l’image
+            🖼️ Aperçu de l’image
           </h1>
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
-              Revenir au générateur
+              ↩️ Revenir au générateur
             </button>
             {singleImageUrl && (
               <button
@@ -815,7 +815,7 @@ function App() {
                 className={buttonOutline}
                 onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
               >
-                Télécharger l&apos;image
+                ⬇️ Télécharger l&apos;image
               </button>
             )}
           </div>
@@ -847,10 +847,10 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Galerie des images générées
+            🗂️ Galerie des images générées
           </h1>
           <p className="text-sm text-slate-600">
-            Liste de toutes les images générées
+            ✨ Liste de toutes les images générées
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <button
@@ -859,14 +859,14 @@ function App() {
                 goToGenerator()
               }}
             >
-              Retour au générateur
+              ↩️ Retour au générateur
             </button>
             <button
               className={buttonPrimary}
               onClick={() => setPortfolioReloadKey((prev) => prev + 1)}
               disabled={portfolioLoading}
             >
-              Rafraîchir la liste
+              🔄 Rafraîchir la liste
             </button>
           </div>
         </section>
@@ -884,7 +884,7 @@ function App() {
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {imageUrls.length === 0 && (
                   <p className="text-sm text-slate-500">
-                    Il n&apos;y a pas encore d&apos;image pour le moment :(
+                    😶 Il n&apos;y a pas encore d&apos;image pour le moment :(
                   </p>
                 )}
                 {imageUrls.map(({ id, url }) => (
@@ -952,9 +952,11 @@ function App() {
       <section className={heroClass}>
         <span className={chipClass}>Match ton Avenir</span>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-          JE CRÉE MON AVATAR – MATCH TON AVENIR
+          JE CRÉE MON AVATAR – MATCH TON AVENIR 🚀
         </h1>
-        <p className="text-lg font-semibold text-slate-900">Et si tu pouvais rencontrer ton futur toi ?</p>
+        <p className="text-lg font-semibold text-slate-900">
+          Et si tu pouvais rencontrer ton futur toi ? ✨
+        </p>
         <p className="text-sm text-slate-600 sm:text-base">
           Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 à 10 minutes
           pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
@@ -966,10 +968,10 @@ function App() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-700">
-              Étape {step + 1} / {totalSteps}
+              🧩 Étape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
-              Revenir au début
+              ↩️ Revenir au début
             </button>
           </div>
 
@@ -980,7 +982,7 @@ function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
-                Précédent
+                ⬅️ Précédent
               </button>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -1001,19 +1003,19 @@ function App() {
                     onClick={handleGenerate}
                     disabled={loading}
                   >
-                    Générer mon avatar (DALL·E)
+                    🎯 Générer mon avatar (DALL·E)
                   </button>
                   <button
                     className={buttonOutline}
                     onClick={handleGenerateGoogle}
                     disabled={loading}
                   >
-                    Générer avec Google
+                    ✨ Générer avec Google
                   </button>
                 </div>
               ) : (
                 <button className={buttonPrimary} onClick={handleNext}>
-                  Étape suivante
+                  ➡️ Étape suivante
                 </button>
               )}
               {loading && (
