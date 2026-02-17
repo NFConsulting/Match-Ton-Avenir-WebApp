@@ -63,9 +63,5 @@ export const buildPrompt = ({
     'Ne pas inventer de texte hors des informations fournies ci-dessus.',
   ]
 
-  if (exploring && !jobList.length) {
-    lines.push('La personne est encore en exploration : proposer des métiers possibles variés.')
-  }
-
   return lines.join('\n')
 }

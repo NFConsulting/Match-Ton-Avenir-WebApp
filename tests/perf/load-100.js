@@ -59,8 +59,7 @@ Important : inclure du texte lisible en français dans l’image.
 Le texte doit être propre, net, correctement orthographié, sans lettres déformées.
 Utiliser une police simple sans-serif, en MAJUSCULES, avec fort contraste sur un fond uni.
 Limiter chaque libellé à 1 à 3 mots maximum.
-Ne pas inventer de texte hors des informations fournies ci-dessus.
-La personne est encore en exploration : proposer des métiers possibles variés.`;
+Ne pas inventer de texte hors des informations fournies ci-dessus.`;
 
 const apiSuccess = new Rate('api_success');
 const apiHasUrl = new Rate('api_has_url');
