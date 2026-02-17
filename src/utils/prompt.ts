@@ -54,6 +54,7 @@ export const buildPrompt = ({
     `Compétences : ${competencesCombined.length ? competencesCombined.join(', ') : 'non précisées'}`,
     `Centres d’intérêt : ${interestList.length ? interestList.join(', ') : 'non précisés'}`,
     `Métiers possibles : ${jobList.length ? jobList.join(', ') : exploring ? 'à explorer' : 'non précisés'}`,
+    'Le rendu doit être une illustration de type dessin (pas une photo réaliste).',
     '',
     "Les compétences et centres d’intérêt doivent influencer l’apparence et les accessoires de l’avatar.",
     'Important : inclure du texte lisible en français dans l’image.',

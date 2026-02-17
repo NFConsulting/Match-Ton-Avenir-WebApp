@@ -53,6 +53,7 @@ Compétences et qualités :
 Compétences : Résolution de problèmes, Confiance en soi, Coopération, Pensée stratégique, Gestion du stress, Confiance en soi
 Centres d’intérêt : Commerce, communication & marketing
 Métiers possibles : à explorer
+Le rendu doit être une illustration de type dessin (pas une photo réaliste).
 
 Les compétences et centres d’intérêt doivent influencer l’apparence et les accessoires de l’avatar.
 Important : inclure du texte lisible en français dans l’image.
