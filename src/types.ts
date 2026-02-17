@@ -2,8 +2,15 @@ export type Option = { label: string; helper?: string }
 
 export type ImageResponse = {
   url: string
-  revisedPrompt?: string
+  revisedPrompt?: string | null
   id?: string
+  suggestedCareers?: string[] | null
+}
+
+export type CareersResponse = {
+  suggestedCareers: string[]
+  enrichedPrompt: string
+  isFallback: boolean
 }
 
 export type CachedUrl = {

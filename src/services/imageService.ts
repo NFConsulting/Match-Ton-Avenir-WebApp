@@ -1,4 +1,4 @@
-﻿import type { CachedUrl, ImageResponse } from '../types'
+﻿import type { CachedUrl, CareersResponse, ImageResponse } from '../types'
 
 const BASE_API_URL =
   import.meta.env.VITE_API_URL ??
@@ -6,6 +6,8 @@ const BASE_API_URL =
 
 const API_URL = `${BASE_API_URL}/image`
 const GOOGLE_API_URL = `${BASE_API_URL}/image/google`
+const CAREERS_API_URL = `${BASE_API_URL}/image/careers`
+const GOOGLE_CAREERS_API_URL = `${BASE_API_URL}/image/google/careers`
 const DEFAULT_URLS_PAGE_SIZE = 12
 const MAX_FULL_FETCH_PAGES = 500
 
@@ -51,7 +53,17 @@ const extractImageId = (url: string): string | undefined => {
   return match?.[1]
 }
 
-const callImageApi = async (url: string, prompt: string): Promise<ImageResponse> => {
+const getErrorMessage = async (response: Response): Promise<string> => {
+  try {
+    const text = (await response.text()).trim()
+    if (text) return text
+  } catch {
+    // ignore parse failures and fallback to status code
+  }
+  return `Requete echouee (${response.status})`
+}
+
+const callCareersApi = async (url: string, prompt: string): Promise<CareersResponse> => {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -59,7 +71,38 @@ const callImageApi = async (url: string, prompt: string): Promise<ImageResponse>
   })
 
   if (!response.ok) {
-    throw new Error(`Requete echouee (${response.status})`)
+    throw new Error(await getErrorMessage(response))
+  }
+
+  const data = (await response.json()) as CareersResponse
+
+  return {
+    suggestedCareers: Array.isArray(data.suggestedCareers)
+      ? data.suggestedCareers.filter((career) => typeof career === 'string')
+      : [],
+    enrichedPrompt: typeof data.enrichedPrompt === 'string' ? data.enrichedPrompt : prompt,
+    isFallback: Boolean(data.isFallback),
+  }
+}
+
+const callImageApi = async (
+  url: string,
+  prompt: string,
+  suggestedCareers?: string[]
+): Promise<ImageResponse> => {
+  const payload: { prompt: string; suggestedCareers?: string[] } = { prompt }
+  if (Array.isArray(suggestedCareers) && suggestedCareers.length > 0) {
+    payload.suggestedCareers = suggestedCareers
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response))
   }
 
   const data: ImageResponse = await response.json()
@@ -135,10 +178,19 @@ const extractHasMore = (data: ImageUrlsApiShape): boolean | undefined => {
   return undefined
 }
 
-export const generateImage = async (prompt: string): Promise<ImageResponse> => callImageApi(API_URL, prompt)
+export const selectCareers = async (prompt: string): Promise<CareersResponse> =>
+  callCareersApi(CAREERS_API_URL, prompt)
 
-export const generateImageGoogle = async (prompt: string): Promise<ImageResponse> =>
-  callImageApi(GOOGLE_API_URL, prompt)
+export const selectCareersGoogle = async (prompt: string): Promise<CareersResponse> =>
+  callCareersApi(GOOGLE_CAREERS_API_URL, prompt)
+
+export const generateImage = async (prompt: string, suggestedCareers?: string[]): Promise<ImageResponse> =>
+  callImageApi(API_URL, prompt, suggestedCareers)
+
+export const generateImageGoogle = async (
+  prompt: string,
+  suggestedCareers?: string[]
+): Promise<ImageResponse> => callImageApi(GOOGLE_API_URL, prompt, suggestedCareers)
 
 export const fetchImageUrlsPage = async ({
   afterId = 0,
@@ -217,3 +269,4 @@ export const fetchImageUrls = async (): Promise<CachedUrl[]> => {
 
   return allUrls
 }
+

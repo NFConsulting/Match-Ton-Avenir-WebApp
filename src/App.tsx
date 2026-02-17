@@ -10,7 +10,13 @@ import {
   interests,
   social,
 } from './constants/options'
-import { fetchImageUrlsPage, generateImage, generateImageGoogle } from './services/imageService'
+import {
+  fetchImageUrlsPage,
+  generateImage,
+  generateImageGoogle,
+  selectCareers,
+  selectCareersGoogle,
+} from './services/imageService'
 import { buildPrompt } from './utils/prompt'
 import type { CachedUrl, PromptInput } from './types'
 
@@ -60,7 +66,6 @@ const spinner = (
   </div>
 )
 
-const errorBoxClass = 'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700'
 const GALLERY_PAGE_SIZE = 12
 
 function App() {
@@ -86,13 +91,13 @@ function App() {
   const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [imageId, setImageId] = useState<string | undefined>()
+  const [suggestedCareers, setSuggestedCareers] = useState<string[]>([])
+  const [careersIsFallback, setCareersIsFallback] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   const [view, setView] = useState<'form' | 'portfolio'>('form')
   const [step, setStep] = useState(0)
   const [portfolioLoading, setPortfolioLoading] = useState(false)
-  const [portfolioError, setPortfolioError] = useState<string | null>(null)
   const [imageUrls, setImageUrls] = useState<CachedUrl[]>([])
   const [portfolioReloadKey, setPortfolioReloadKey] = useState(0)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
@@ -208,6 +213,7 @@ function App() {
     hasAvatarHair &&
     hasAvatarTeint &&
     hasAvatarStyle
+  const careersToDisplay = suggestedCareers.slice(0, 3)
 
   const isStepValid = (stepId: string) => {
     switch (stepId) {
@@ -311,21 +317,51 @@ function App() {
 
   const submitPrompt = async (
     prompt: string,
-    generator: (p: string) => Promise<{ url: string; revisedPrompt?: string; id?: string }> = generateImage
+    careersSelector: (p: string) => Promise<{
+      suggestedCareers: string[]
+      enrichedPrompt: string
+      isFallback: boolean
+    }> = selectCareers,
+    generator: (
+      p: string,
+      suggestedCareers?: string[]
+    ) => Promise<{
+      url: string
+      revisedPrompt?: string | null
+      id?: string
+      suggestedCareers?: string[] | null
+    }> = generateImage
   ) => {
-    setError(null)
     setImageUrl('')
     setImageId(undefined)
+    setSuggestedCareers([])
+    setCareersIsFallback(null)
 
     const cleanedPrompt = prompt.trim()
     if (!cleanedPrompt) {
-      setError('Complète au moins une section ou saisis un prompt avant de lancer la génération.')
+      console.error('[generate] Prompt vide: génération annulée.')
       return
     }
 
     setLoading(true)
     try {
-      const data = await generator(cleanedPrompt)
+      const careersData = await careersSelector(cleanedPrompt)
+      const careers = Array.isArray(careersData.suggestedCareers)
+        ? careersData.suggestedCareers.filter((career) => typeof career === 'string').slice(0, 3)
+        : []
+      const enrichedPrompt = (careersData.enrichedPrompt || cleanedPrompt).trim()
+
+      setSuggestedCareers(careers)
+      setCareersIsFallback(Boolean(careersData.isFallback))
+      setGeneratedPrompt(enrichedPrompt)
+
+      const data = await generator(enrichedPrompt, careers)
+
+      const finalCareers = Array.isArray(data.suggestedCareers)
+        ? data.suggestedCareers.filter((career) => typeof career === 'string').slice(0, 3)
+        : careers
+      setSuggestedCareers(finalCareers)
+
       setImageUrl(data.url)
       const normalizedImageId = data.id !== undefined && data.id !== null ? String(data.id) : undefined
       setImageId(normalizedImageId)
@@ -338,7 +374,7 @@ function App() {
     } catch (fetchError) {
       const rawMessage = fetchError instanceof Error ? fetchError.message : ''
       const message = friendlyMessage(rawMessage, 'Impossible de contacter le service.')
-      setError(message)
+      console.error('[generate] Echec génération:', message, fetchError)
     } finally {
       setLoading(false)
     }
@@ -347,23 +383,21 @@ function App() {
   const handleGenerate = async () => {
     const prompt = buildPrompt(buildPromptInput())
     setGeneratedPrompt(prompt)
-    await submitPrompt(prompt, generateImage)
+    await submitPrompt(prompt, selectCareers, generateImage)
   }
 
   const handleGenerateGoogle = async () => {
     const prompt = buildPrompt(buildPromptInput())
     setGeneratedPrompt(prompt)
-    await submitPrompt(prompt, generateImageGoogle)
+    await submitPrompt(prompt, selectCareersGoogle, generateImageGoogle)
   }
 
   const handleSendEditedPrompt = async () => {
-    await submitPrompt(generatedPrompt)
+    await submitPrompt(generatedPrompt, selectCareers, generateImage)
   }
 
   const loadPortfolioPage = useCallback(
     async (targetAfterId: number, replace = false) => {
-      setPortfolioError(null)
-
       if (replace) {
         setPortfolioLoading(true)
       } else {
@@ -396,7 +430,7 @@ function App() {
       } catch (fetchError) {
         const rawMessage = fetchError instanceof Error ? fetchError.message : ''
         const message = friendlyMessage(rawMessage, 'Impossible de recuperer les images.')
-        setPortfolioError(message)
+        console.error('[portfolio] Echec chargement images:', message, fetchError)
       } finally {
         if (replace) {
           setPortfolioLoading(false)
@@ -637,6 +671,26 @@ function App() {
               onSend={handleSendEditedPrompt}
               loading={loading}
             />
+            {careersToDisplay.length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
+                <p className="text-base font-semibold text-slate-900">🧭 Métiers suggérés</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {careersToDisplay.map((career, index) => (
+                    <span
+                      key={`${career}-${index}`}
+                      className="inline-flex items-center rounded-full bg-brand-500/10 px-3 py-1 text-sm font-medium text-slate-900"
+                    >
+                      {career}
+                    </span>
+                  ))}
+                </div>
+                {careersIsFallback !== null && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
+                  </p>
+                )}
+              </div>
+            )}
             {imageUrl && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
                 <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
@@ -675,6 +729,8 @@ function App() {
       counts.emotional,
       counts.interests,
       counts.social,
+      careersIsFallback,
+      careersToDisplay,
       exploring,
       generatedPrompt,
       handleDownloadImage,
@@ -706,7 +762,8 @@ function App() {
     setGeneratedPrompt('')
     setImageUrl('')
     setImageId(undefined)
-    setError(null)
+    setSuggestedCareers([])
+    setCareersIsFallback(null)
     setLoading(false)
   }
 
@@ -788,10 +845,13 @@ function App() {
           page += 1
         }
 
-        setSingleImageError('Image introuvable avec cet identifiant.')
+        const notFoundMessage = 'Image introuvable avec cet identifiant.'
+        setSingleImageError(notFoundMessage)
+        console.error('[single-image]', notFoundMessage, route.imageId)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Impossible de récupérer l’image.'
         setSingleImageError(msg)
+        console.error('[single-image] Echec récupération image:', msg, err)
       }
     }
 
@@ -826,9 +886,24 @@ function App() {
         </section>
 
         <section className={panelClass}>
-          {singleImageError && (
-            <div className={`${errorBoxClass} mb-3`}>
-              {singleImageError}
+          {careersToDisplay.length > 0 && (
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
+              <p className="text-base font-semibold text-slate-900">🧭 Métiers suggérés</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {careersToDisplay.map((career, index) => (
+                  <span
+                    key={`${career}-${index}`}
+                    className="inline-flex items-center rounded-full bg-brand-500/10 px-3 py-1 text-sm font-medium text-slate-900"
+                  >
+                    {career}
+                  </span>
+                ))}
+              </div>
+              {careersIsFallback !== null && (
+                <p className="mt-2 text-xs text-slate-500">
+                  {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
+                </p>
+              )}
             </div>
           )}
           {!singleImageUrl && !singleImageError && spinner}
@@ -876,11 +951,6 @@ function App() {
         </section>
 
         <section className={panelClass}>
-          {portfolioError && (
-            <div className={`${errorBoxClass} mb-3`}>
-              {portfolioError}
-            </div>
-          )}
           {portfolioLoading ? (
             spinner
           ) : (
@@ -994,11 +1064,6 @@ function App() {
                 <p className="text-sm text-red-600">
                   {validationMessage[currentStepId]}
                 </p>
-              )}
-              {error && (
-                <div className={errorBoxClass}>
-                  {error}
-                </div>
               )}
               {isLastStep ? (
                 <div className="flex flex-wrap items-center gap-2">
