@@ -227,12 +227,12 @@ function App() {
   }
 
   const validationMessage: Record<string, string> = {
-    strengths: 'Choisis au moins 1 compÃ©tence dans chaque catÃ©gorie : cognitive, Ã©motionnelle et sociale.',
-    develop: 'SÃ©lectionne au moins une compÃ©tence Ã  dÃ©velopper.',
-    interests: 'Choisis au moins un centre dâ€™intÃ©rÃªt.',
-    jobs: 'Renseigne un mÃ©tier ou coche â€œJe suis encore en explorationâ€.',
+    strengths: 'Choisis au moins 1 compétence dans chaque catégorie : cognitive, émotionnelle et sociale.',
+    develop: 'Sélectionne au moins une compétence à développer.',
+    interests: 'Choisis au moins un centre d’intérêt.',
+    jobs: 'Renseigne un métier ou coche “Je suis encore en exploration”.',
     avatar:
-      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour lâ€™avatar.',
+      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour l’avatar.',
   }
 
   const buildPromptInput = (): PromptInput => ({
@@ -267,7 +267,7 @@ function App() {
 
     const cleanedPrompt = prompt.trim()
     if (!cleanedPrompt) {
-      setError('ComplÃ¨te au moins une section ou saisis un prompt avant de lancer la gÃ©nÃ©ration.')
+      setError('Complète au moins une section ou saisis un prompt avant de lancer la génération.')
       return
     }
 
@@ -407,18 +407,18 @@ function App() {
     () => [
       {
         id: 'strengths',
-        label: 'Ce que jâ€™ai montrÃ© pendant le sport',
+        label: 'Ce que j’ai montré pendant le sport',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>1. CE QUE Jâ€™AI MONTRÃ‰ PENDANT LE SPORT</p>
+            <p className={eyebrowClass}>1. CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 3 Ã  5 compÃ©tences que tu as le plus montrÃ©es
+              Choisis 3 à 5 compétences que tu as le plus montrées
             </p>
             <div className="mt-5 space-y-6">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  CompÃ©tences cognitives â€” Esprit clair
-                  <span className={`${countChipClass} ml-3`}>{counts.cognitive} sÃ©lection(s)</span>
+                  Compétences cognitives — Esprit clair
+                  <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -433,8 +433,8 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  CompÃ©tences Ã©motionnelles â€” CÅ“ur calme
-                  <span className={`${countChipClass} ml-3`}>{counts.emotional} sÃ©lection(s)</span>
+                  Compétences émotionnelles — Cœur calme
+                  <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -449,8 +449,8 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  CompÃ©tences sociales â€” Bras ouverts
-                  <span className={`${countChipClass} ml-3`}>{counts.social} sÃ©lection(s)</span>
+                  Compétences sociales — Bras ouverts
+                  <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
                   <CheckboxList
@@ -468,16 +468,16 @@ function App() {
       },
       {
         id: 'develop',
-        label: 'CompÃ©tences Ã  dÃ©velopper',
+        label: 'Compétences à développer',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>Tes compÃ©tences sont Ã©volutives, quâ€™aimerais tu dÃ©velopper davantage ?</p>
+            <p className={eyebrowClass}>Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 1 Ã  3 compÃ©tences que tu souhaites amÃ©liorer
+              Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              SÃ©lections
-              <span className={`${countChipClass} ml-3`}>{counts.develop} sÃ©lection(s)</span>
+              Sélections
+              <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
             </h3>
             <div className="mt-3">
               <CheckboxList
@@ -492,16 +492,16 @@ function App() {
       },
       {
         id: 'interests',
-        label: 'Centres dâ€™intÃ©rÃªt',
+        label: 'Centres d’intérêt',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>2. MES CENTRES Dâ€™INTÃ‰RÃŠT</p>
+            <p className={eyebrowClass}>2. MES CENTRES D’INTÉRÊT</p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 1 Ã  3 centres dâ€™intÃ©rÃªt que tu prÃ©fÃ¨res
+              Choisis 1 à 3 centres d’intérêt que tu préfères
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              SÃ©lections
-              <span className={`${countChipClass} ml-3`}>{counts.interests} sÃ©lection(s)</span>
+              Sélections
+              <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
             </h3>
             <div className="mt-3">
               <CheckboxList
@@ -516,12 +516,12 @@ function App() {
       },
       {
         id: 'jobs',
-        label: 'MÃ©tiers explorÃ©s',
+        label: 'Métiers explorés',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>3. MÃ‰TIERS SUR LESQUELS JE ME PROJETTE :</p>
+            <p className={eyebrowClass}>3. MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
             <p className="mt-2 text-sm text-slate-600">
-              Ã‰cris 1 Ã  3 mÃ©tiers qui tâ€™ont le plus intÃ©ressÃ©
+              Écris 1 à 3 métiers qui t’ont le plus intéressé
             </p>
             <div className="mt-4">
               <JobsSection
@@ -540,12 +540,12 @@ function App() {
       },
       {
         id: 'avatar',
-        label: 'DÃ©tails de lâ€™avatar',
+        label: 'Détails de l’avatar',
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>4. Ã€ QUOI RESSEMBLE MON AVATAR</p>
+            <p className={eyebrowClass}>4. À QUOI RESSEMBLE MON AVATAR</p>
             <p className="mt-2 text-sm text-slate-600">
-              Imagine ton futur toi et complÃ¨te les infos ci-dessous
+              Imagine ton futur toi et complète les infos ci-dessous
             </p>
 
             <div className="mt-5">
@@ -575,7 +575,7 @@ function App() {
       },
       {
         id: 'preview',
-        label: 'PrÃ©visualisation & gÃ©nÃ©ration',
+        label: 'Prévisualisation & génération',
         content: (
           <div className="space-y-4">
             <PromptPreview
@@ -586,9 +586,9 @@ function App() {
             />
             {imageUrl && (
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
-                <img src={imageUrl} alt="Avatar gÃ©nÃ©rÃ©" className="h-full w-full object-cover" />
+                <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 <div className="space-y-1 px-5 py-4">
-                  <p className="text-base font-semibold text-slate-900">Image renvoyÃ©e par lâ€™API</p>
+                  <p className="text-base font-semibold text-slate-900">Image renvoyée par l’API</p>
                   {imageId && (
                     <p className="text-sm text-slate-600">
                       ID : {imageId}
@@ -663,7 +663,7 @@ function App() {
     setView('portfolio')
     setLightboxUrl(null)
     setImageUrls([])
-    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrÃ©e
+    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrée
   }
 
   const goNext = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1))
@@ -735,7 +735,7 @@ function App() {
 
         setSingleImageError('Image introuvable avec cet identifiant.')
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Impossible de rÃ©cupÃ©rer lâ€™image.'
+        const msg = err instanceof Error ? err.message : 'Impossible de récupérer l’image.'
         setSingleImageError(msg)
       }
     }
@@ -752,11 +752,11 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            AperÃ§u de lâ€™image
+            Aperçu de l’image
           </h1>
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
-              Revenir au gÃ©nÃ©rateur
+              Revenir au générateur
             </button>
             <button className={buttonOutline} onClick={goToPortfolio}>
               Afficher la galerie des images
@@ -773,7 +773,7 @@ function App() {
           {!singleImageUrl && !singleImageError && spinner}
           {singleImageUrl && (
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-              <img src={singleImageUrl} alt="Avatar gÃ©nÃ©rÃ©" className="h-full w-full object-cover" />
+              <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
             </div>
           )}
         </section>
@@ -790,10 +790,10 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            Galerie des images gÃ©nÃ©rÃ©es
+            Galerie des images générées
           </h1>
           <p className="text-sm text-slate-600">
-            Liste de toutes les images gÃ©nÃ©rÃ©es
+            Liste de toutes les images générées
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <button
@@ -802,14 +802,14 @@ function App() {
                 goToGenerator()
               }}
             >
-              Retour au gÃ©nÃ©rateur
+              Retour au générateur
             </button>
             <button
               className={buttonPrimary}
               onClick={() => setPortfolioReloadKey((prev) => prev + 1)}
               disabled={portfolioLoading}
             >
-              RafraÃ®chir la liste
+              Rafraîchir la liste
             </button>
           </div>
         </section>
@@ -839,7 +839,7 @@ function App() {
                   >
                     <img
                       src={url}
-                      alt="Image gÃ©nÃ©rÃ©e"
+                      alt="Image générée"
                       loading="lazy"
                       className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                     />
@@ -877,7 +877,7 @@ function App() {
               </button>
               <img
                 src={lightboxUrl}
-                alt="AperÃ§u"
+                alt="Aperçu"
                 className="max-h-[80vh] w-full rounded-2xl object-contain"
               />
             </div>
@@ -895,13 +895,13 @@ function App() {
       <section className={heroClass}>
         <span className={chipClass}>Match ton Avenir</span>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-          JE CRÃ‰E MON AVATAR â€“ MATCH TON AVENIR
+          JE CRÉE MON AVATAR – MATCH TON AVENIR
         </h1>
         <p className="text-lg font-semibold text-slate-900">Et si tu pouvais rencontrer ton futur toi ?</p>
         <p className="text-sm text-slate-600 sm:text-base">
-          Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 Ã  10 minutes
-          pour rÃ©pondre aux questions, et dÃ©couvre ton avatar du futur, crÃ©Ã© Ã  partir de tes
-          compÃ©tences, de tes expÃ©riences sportives et de tes centres dâ€™intÃ©rÃªt.
+          Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 à 10 minutes
+          pour répondre aux questions, et découvre ton avatar du futur, créé à partir de tes
+          compétences, de tes expériences sportives et de tes centres d’intérêt.
         </p>
       </section>
 
@@ -909,10 +909,10 @@ function App() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-700">
-              Ã‰tape {step + 1} / {totalSteps}
+              Étape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
-              Revenir au dÃ©but
+              Revenir au début
             </button>
           </div>
 
@@ -923,7 +923,7 @@ function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
-                PrÃ©cÃ©dent
+                Précédent
               </button>
               {(step === 0 || isLastStep) && (
                 <button className={buttonOutline} onClick={goToPortfolio}>
@@ -949,19 +949,19 @@ function App() {
                     onClick={handleGenerate}
                     disabled={loading}
                   >
-                    GÃ©nÃ©rer mon avatar (DALLÂ·E)
+                    Générer mon avatar (DALL·E)
                   </button>
                   <button
                     className={buttonOutline}
                     onClick={handleGenerateGoogle}
                     disabled={loading}
                   >
-                    GÃ©nÃ©rer avec Google
+                    Générer avec Google
                   </button>
                 </div>
               ) : (
                 <button className={buttonPrimary} onClick={handleNext}>
-                  Ã‰tape suivante
+                  Étape suivante
                 </button>
               )}
               {loading && (

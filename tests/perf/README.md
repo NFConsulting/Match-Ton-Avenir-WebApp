@@ -13,16 +13,22 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `npm run perf:100:google`
 - `npm run perf:dalle` (alias of `perf:dalle:10`)
 - `npm run perf:google` (alias of `perf:google:10`)
+- `npm run perf:urls` (alias of `perf:urls:10`)
 - `npm run perf:dalle:10`
 - `npm run perf:dalle:50`
 - `npm run perf:dalle:100`
 - `npm run perf:google:10`
 - `npm run perf:google:50`
 - `npm run perf:google:100`
+- `npm run perf:urls:10`
+- `npm run perf:urls:50`
+- `npm run perf:urls:100`
 - `npm run perf:dalle:live` (1 user, live request/response logs)
 - `npm run perf:google:live` (1 user, live request/response logs)
+- `npm run perf:urls:live` (10 calls, 1/s, live logs)
 - `npm run perf:progressive:dalle`
 - `npm run perf:progressive:google`
+- `npm run perf:progressive:urls`
 - `npm run perf:progressive`
 
 ## Optional environment variables
@@ -30,13 +36,17 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `API_BASE_URL` default: `https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api`
 - `VUS` default: `100`
 - `DURATION` default: `2m`
-- `MODE` values: `both` (default), `dalle`, `google`
+- `MODE` values: `both` (default), `dalle`, `google`, `urls`
 - `DALL_E_RATIO` default: `0.5` (used only when `MODE=both`)
 - `THINK_TIME` default: `0.3` seconds
 - `TOTAL_CALLS` default: `0` (if `>0`, run exactly this number of requests)
 - `CONCURRENCY` default: `1` (used with `TOTAL_CALLS`)
 - `MAX_DURATION` default: `30m` (used with `TOTAL_CALLS`)
 - `INTERVAL_SECONDS` default: `0` (if `>0` with `TOTAL_CALLS`, starts one request every N seconds)
+- `URLS_LIMIT` default: `12` (used when `MODE=urls`)
+- `URLS_AFTER_ID` default: `0` (used when `MODE=urls`)
+- `URLS_INCLUDE_URL` default: `true` (used when `MODE=urls`)
+- `URLS_WALK_CURSOR` default: `false` (if enabled, follows `nextAfterId` page by page per VU)
 - `LIVE_LOG` default: enabled
 - `LIVE_LOG` values: set `0|false|no|off` to disable live call/response lines
 - `LIVE_LOG_BODY_CHARS` default: `220` chars for response body preview
@@ -73,6 +83,12 @@ Generated files:
 - `tests/perf/reports/manual/google-50-raw.json`
 - `tests/perf/reports/manual/google-100-summary.json`
 - `tests/perf/reports/manual/google-100-raw.json`
+- `tests/perf/reports/manual/urls-10-summary.json`
+- `tests/perf/reports/manual/urls-10-raw.json`
+- `tests/perf/reports/manual/urls-50-summary.json`
+- `tests/perf/reports/manual/urls-50-raw.json`
+- `tests/perf/reports/manual/urls-100-summary.json`
+- `tests/perf/reports/manual/urls-100-raw.json`
 
 Report format:
 
@@ -131,6 +147,8 @@ Tracked metrics include:
 - checks success rate (`checks`)
 - API success rate (`api_success`)
 - response body contains image URL rate (`api_has_url`)
+- items returned per call (`api_items_count`)
+- response payload size (`api_response_bytes`)
 - latency: `avg`, `p90`, `p95`, `max`
 
 ## Examples

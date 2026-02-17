@@ -18,9 +18,16 @@ const INTERVAL_SECONDS = Number(__ENV.INTERVAL_SECONDS || 0);
 const liveLogRaw = String(__ENV.LIVE_LOG || '').toLowerCase();
 const LIVE_LOG = !['0', 'false', 'no', 'off'].includes(liveLogRaw);
 const LIVE_LOG_BODY_CHARS = Number(__ENV.LIVE_LOG_BODY_CHARS || 220);
+const URLS_LIMIT = Math.max(1, Number(__ENV.URLS_LIMIT || 12));
+const URLS_AFTER_ID = Math.max(0, Number(__ENV.URLS_AFTER_ID || 0));
+const urlsIncludeRaw = String(__ENV.URLS_INCLUDE_URL || 'true').toLowerCase();
+const URLS_INCLUDE_URL = !['0', 'false', 'no', 'off'].includes(urlsIncludeRaw);
+const urlsWalkRaw = String(__ENV.URLS_WALK_CURSOR || '').toLowerCase();
+const URLS_WALK_CURSOR = ['1', 'true', 'yes', 'on'].includes(urlsWalkRaw);
 
 const IMAGE_URL = `${API_BASE_URL}/image`;
 const GOOGLE_URL = `${API_BASE_URL}/image/google`;
+const URLS_STREAM_URL = `${API_BASE_URL}/image/urls/stream`;
 
 const PROMPTS = [
   'Avatar jeune adulte confiant, style sport, icones metiers autour',
@@ -33,6 +40,10 @@ const PROMPTS = [
 const apiSuccess = new Rate('api_success');
 const apiHasUrl = new Rate('api_has_url');
 const apiReqDuration = new Trend('api_req_duration', true);
+const apiItemsCount = new Trend('api_items_count', true);
+const apiRespBytes = new Trend('api_response_bytes', true);
+
+let urlsCursor = URLS_AFTER_ID;
 
 const thresholds = {
   http_req_failed: ['rate<0.1'],
@@ -93,27 +104,95 @@ function pickPrompt() {
 }
 
 function pickEndpoint() {
+  if (MODE === 'urls' || MODE === 'stream' || MODE === 'urls_stream') {
+    return { url: URLS_STREAM_URL, tag: 'urls_stream', kind: 'urls_stream', method: 'GET' };
+  }
+
   if (MODE === 'dalle') {
-    return { url: IMAGE_URL, tag: 'dalle' };
+    return { url: IMAGE_URL, tag: 'dalle', kind: 'image_generate', method: 'POST' };
   }
 
   if (MODE === 'google') {
-    return { url: GOOGLE_URL, tag: 'google' };
+    return { url: GOOGLE_URL, tag: 'google', kind: 'image_generate', method: 'POST' };
   }
 
   if (Math.random() < DALL_E_RATIO) {
-    return { url: IMAGE_URL, tag: 'dalle' };
+    return { url: IMAGE_URL, tag: 'dalle', kind: 'image_generate', method: 'POST' };
   }
 
-  return { url: GOOGLE_URL, tag: 'google' };
+  return { url: GOOGLE_URL, tag: 'google', kind: 'image_generate', method: 'POST' };
 }
 
-function parseImageResponse(response) {
+function parseApiResponse(response) {
   try {
     return response.json();
   } catch (_err) {
     return null;
   }
+}
+
+function parseNumber(value) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function extractStreamArray(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return null;
+  }
+  if (Array.isArray(parsed.urls)) return parsed.urls;
+  if (Array.isArray(parsed.items)) return parsed.items;
+  if (Array.isArray(parsed.data)) return parsed.data;
+  if (Array.isArray(parsed.results)) return parsed.results;
+  if (Array.isArray(parsed.value)) return parsed.value;
+  return null;
+}
+
+function getStreamMeta(parsed) {
+  const list = extractStreamArray(parsed);
+  const hasList = Array.isArray(list);
+
+  let urlCount = 0;
+  if (hasList) {
+    for (const item of list) {
+      if (typeof item === 'string') {
+        if (item.trim()) {
+          urlCount += 1;
+        }
+        continue;
+      }
+      if (
+        item &&
+        typeof item === 'object' &&
+        typeof item.url === 'string' &&
+        item.url.trim()
+      ) {
+        urlCount += 1;
+      }
+    }
+  }
+
+  let nextAfterId = null;
+  let hasMore = null;
+  if (parsed && typeof parsed === 'object') {
+    nextAfterId = parseNumber(parsed.nextAfterId);
+    hasMore = typeof parsed.hasMore === 'boolean' ? parsed.hasMore : null;
+  }
+
+  return {
+    hasList,
+    urlCount,
+    nextAfterId,
+    hasMore,
+  };
 }
 
 function compactText(value) {
@@ -123,20 +202,36 @@ function compactText(value) {
   return String(value).replace(/\s+/g, ' ').trim();
 }
 
-function logLiveCall(endpoint, prompt, response, parsed, hasUrl) {
+function buildStreamUrl(afterId) {
+  const includeUrl = URLS_INCLUDE_URL ? 'true' : 'false';
+  return `${URLS_STREAM_URL}?afterId=${afterId}&limit=${URLS_LIMIT}&includeUrl=${includeUrl}`;
+}
+
+function logLiveCall(endpoint, response, meta) {
   if (!LIVE_LOG) {
     return;
   }
 
   const bodyPreview = compactText(response.body).slice(0, LIVE_LOG_BODY_CHARS);
-  const imageUrl = parsed && parsed.url ? String(parsed.url) : '';
-  const errorMessage = parsed && parsed.error ? compactText(parsed.error) : '';
-  const promptPreview = compactText(prompt).slice(0, 120);
   const vuId = exec.vu.idInTest;
   const iteration = exec.scenario.iterationInTest;
+  const base =
+    `[LIVE] vu=${vuId} iter=${iteration} endpoint=${endpoint.tag} status=${response.status}` +
+    ` durationMs=${Math.round(response.timings.duration)} hasUrl=${meta.hasUrl}`;
 
+  if (endpoint.kind === 'urls_stream') {
+    console.log(
+      `${base} urlsCount=${meta.urlsCount} hasList=${meta.hasList} afterId=${meta.afterId}` +
+        ` nextAfterId=${meta.nextAfterId ?? ''} hasMore=${meta.hasMore ?? ''} requestUrl="${meta.requestUrl}" body="${bodyPreview}"`
+    );
+    return;
+  }
+
+  const imageUrl = meta.parsed && meta.parsed.url ? String(meta.parsed.url) : '';
+  const errorMessage = meta.parsed && meta.parsed.error ? compactText(meta.parsed.error) : '';
+  const promptPreview = compactText(meta.prompt).slice(0, 120);
   console.log(
-    `[LIVE] vu=${vuId} iter=${iteration} endpoint=${endpoint.tag} status=${response.status} durationMs=${Math.round(response.timings.duration)} hasUrl=${hasUrl} imageUrl="${imageUrl}" error="${errorMessage}" prompt="${promptPreview}" body="${bodyPreview}"`
+    `${base} imageUrl="${imageUrl}" error="${errorMessage}" prompt="${promptPreview}" body="${bodyPreview}"`
   );
 }
 
@@ -144,25 +239,79 @@ export default function () {
   waitForScheduledSlot();
 
   const endpoint = pickEndpoint();
-  const prompt = pickPrompt();
-  const payload = JSON.stringify({ prompt });
-  const response = http.post(endpoint.url, payload, {
-    headers: { 'Content-Type': 'application/json' },
-    tags: { endpoint: endpoint.tag },
-  });
-  const is2xx = response.status >= 200 && response.status < 300;
-  const parsed = parseImageResponse(response);
-  const hasUrl = Boolean(parsed && parsed.url);
+  let response;
+  let prompt = '';
+  let afterId = null;
+  let requestUrl = endpoint.url;
 
-  apiSuccess.add(is2xx && hasUrl, { endpoint: endpoint.tag });
+  if (endpoint.kind === 'urls_stream') {
+    afterId = URLS_WALK_CURSOR ? urlsCursor : URLS_AFTER_ID;
+    requestUrl = buildStreamUrl(afterId);
+    response = http.get(requestUrl, { tags: { endpoint: endpoint.tag } });
+  } else {
+    prompt = pickPrompt();
+    const payload = JSON.stringify({ prompt });
+    response = http.post(endpoint.url, payload, {
+      headers: { 'Content-Type': 'application/json' },
+      tags: { endpoint: endpoint.tag },
+    });
+  }
+
+  const is2xx = response.status >= 200 && response.status < 300;
+  const parsed = parseApiResponse(response);
+  const streamMeta = endpoint.kind === 'urls_stream' ? getStreamMeta(parsed) : null;
+  const hasUrl =
+    endpoint.kind === 'urls_stream'
+      ? (streamMeta && streamMeta.urlCount > 0) || false
+      : Boolean(parsed && parsed.url);
+  const successSignal =
+    endpoint.kind === 'urls_stream'
+      ? is2xx && (streamMeta?.hasList || false)
+      : is2xx && hasUrl;
+
+  apiSuccess.add(successSignal, { endpoint: endpoint.tag });
   apiHasUrl.add(hasUrl, { endpoint: endpoint.tag });
   apiReqDuration.add(response.timings.duration, { endpoint: endpoint.tag });
-
-  check(response, {
-    'status is 2xx': () => is2xx,
-    'body contains url': () => hasUrl,
+  apiItemsCount.add(endpoint.kind === 'urls_stream' ? streamMeta?.urlCount || 0 : hasUrl ? 1 : 0, {
+    endpoint: endpoint.tag,
   });
-  logLiveCall(endpoint, prompt, response, parsed, hasUrl);
+  apiRespBytes.add(response.body ? response.body.length : 0, { endpoint: endpoint.tag });
+
+  const checksMap =
+    endpoint.kind === 'urls_stream'
+      ? {
+          'status is 2xx': () => is2xx,
+          'body contains urls list': () => (streamMeta?.hasList ? true : false),
+        }
+      : {
+          'status is 2xx': () => is2xx,
+          'body contains url': () => hasUrl,
+        };
+
+  check(response, checksMap);
+  logLiveCall(endpoint, response, {
+    hasUrl,
+    parsed,
+    prompt,
+    hasList: streamMeta?.hasList || false,
+    urlsCount: streamMeta?.urlCount || 0,
+    afterId,
+    nextAfterId: streamMeta?.nextAfterId ?? null,
+    hasMore: streamMeta?.hasMore ?? null,
+    requestUrl,
+  });
+
+  if (endpoint.kind === 'urls_stream' && URLS_WALK_CURSOR) {
+    if (
+      streamMeta?.hasMore &&
+      typeof streamMeta.nextAfterId === 'number' &&
+      streamMeta.nextAfterId > afterId
+    ) {
+      urlsCursor = streamMeta.nextAfterId;
+    } else {
+      urlsCursor = URLS_AFTER_ID;
+    }
+  }
 
   if (!(TOTAL_CALLS > 0 && INTERVAL_SECONDS > 0)) {
     sleep(THINK_TIME);

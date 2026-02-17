@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('dalle', 'google', 'both')]
+  [ValidateSet('dalle', 'google', 'urls', 'both')]
   [string]$Mode = 'both',
   [int[]]$Steps = @(10, 50, 100),
   [string]$Duration = '2m',
