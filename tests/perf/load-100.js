@@ -27,9 +27,12 @@ const URLS_WALK_CURSOR = ['1', 'true', 'yes', 'on'].includes(urlsWalkRaw);
 const CUSTOM_PROMPT = String(__ENV.CUSTOM_PROMPT || '').trim();
 const FORCE_DEFAULT_PROMPT_RAW = String(__ENV.FORCE_DEFAULT_PROMPT || 'true').toLowerCase();
 const FORCE_DEFAULT_PROMPT = !['0', 'false', 'no', 'off'].includes(FORCE_DEFAULT_PROMPT_RAW);
+const HTTP_TIMEOUT = String(__ENV.HTTP_TIMEOUT || '120s').trim();
 
 const IMAGE_URL = `${API_BASE_URL}/image`;
 const GOOGLE_URL = `${API_BASE_URL}/image/google`;
+const CAREERS_URL = `${API_BASE_URL}/image/careers`;
+const GOOGLE_CAREERS_URL = `${API_BASE_URL}/image/google/careers`;
 const URLS_STREAM_URL = `${API_BASE_URL}/image/urls/stream`;
 
 const PROMPTS = [
@@ -139,6 +142,19 @@ function pickEndpoint() {
     return { url: URLS_STREAM_URL, tag: 'urls_stream', kind: 'urls_stream', method: 'GET' };
   }
 
+  if (MODE === 'careers') {
+    return { url: CAREERS_URL, tag: 'careers', kind: 'careers_select', method: 'POST' };
+  }
+
+  if (
+    MODE === 'google_careers' ||
+    MODE === 'google-careers' ||
+    MODE === 'careers_google' ||
+    MODE === 'careers-google'
+  ) {
+    return { url: GOOGLE_CAREERS_URL, tag: 'google_careers', kind: 'careers_select', method: 'POST' };
+  }
+
   if (MODE === 'dalle') {
     return { url: IMAGE_URL, tag: 'dalle', kind: 'image_generate', method: 'POST' };
   }
@@ -226,6 +242,31 @@ function getStreamMeta(parsed) {
   };
 }
 
+function getCareersMeta(parsed) {
+  if (!parsed || typeof parsed !== 'object') {
+    return {
+      hasCareersList: false,
+      careersCount: 0,
+      hasEnrichedPrompt: false,
+      isFallback: null,
+    };
+  }
+
+  const careers = Array.isArray(parsed.suggestedCareers)
+    ? parsed.suggestedCareers.filter((career) => typeof career === 'string' && career.trim() !== '')
+    : [];
+  const hasEnrichedPrompt =
+    typeof parsed.enrichedPrompt === 'string' && parsed.enrichedPrompt.trim().length > 0;
+  const isFallback = typeof parsed.isFallback === 'boolean' ? parsed.isFallback : null;
+
+  return {
+    hasCareersList: Array.isArray(parsed.suggestedCareers),
+    careersCount: careers.length,
+    hasEnrichedPrompt,
+    isFallback,
+  };
+}
+
 function compactText(value) {
   if (!value) {
     return '';
@@ -236,6 +277,16 @@ function compactText(value) {
 function buildStreamUrl(afterId) {
   const includeUrl = URLS_INCLUDE_URL ? 'true' : 'false';
   return `${URLS_STREAM_URL}?afterId=${afterId}&limit=${URLS_LIMIT}&includeUrl=${includeUrl}`;
+}
+
+function withRequestTimeout(params) {
+  if (!HTTP_TIMEOUT) {
+    return params;
+  }
+  return {
+    ...params,
+    timeout: HTTP_TIMEOUT,
+  };
 }
 
 function logLiveCall(endpoint, response, meta) {
@@ -254,6 +305,16 @@ function logLiveCall(endpoint, response, meta) {
     console.log(
       `${base} urlsCount=${meta.urlsCount} hasList=${meta.hasList} afterId=${meta.afterId}` +
         ` nextAfterId=${meta.nextAfterId ?? ''} hasMore=${meta.hasMore ?? ''} requestUrl="${meta.requestUrl}" body="${bodyPreview}"`
+    );
+    return;
+  }
+
+  if (endpoint.kind === 'careers_select') {
+    const enrichedPromptPreview = compactText(meta.parsed?.enrichedPrompt || '').slice(0, 120);
+    const promptPreview = compactText(meta.prompt).slice(0, 120);
+    console.log(
+      `${base} careersCount=${meta.careersCount} hasEnrichedPrompt=${meta.hasEnrichedPrompt}` +
+        ` isFallback=${meta.isFallback ?? ''} prompt="${promptPreview}" enrichedPrompt="${enrichedPromptPreview}" body="${bodyPreview}"`
     );
     return;
   }
@@ -278,34 +339,50 @@ export default function () {
   if (endpoint.kind === 'urls_stream') {
     afterId = URLS_WALK_CURSOR ? urlsCursor : URLS_AFTER_ID;
     requestUrl = buildStreamUrl(afterId);
-    response = http.get(requestUrl, { tags: { endpoint: endpoint.tag } });
+    response = http.get(
+      requestUrl,
+      withRequestTimeout({ tags: { endpoint: endpoint.tag } })
+    );
   } else {
     prompt = pickPrompt();
     const payload = JSON.stringify({ prompt });
-    response = http.post(endpoint.url, payload, {
-      headers: { 'Content-Type': 'application/json' },
-      tags: { endpoint: endpoint.tag },
-    });
+    response = http.post(
+      endpoint.url,
+      payload,
+      withRequestTimeout({
+        headers: { 'Content-Type': 'application/json' },
+        tags: { endpoint: endpoint.tag },
+      })
+    );
   }
 
   const is2xx = response.status >= 200 && response.status < 300;
   const parsed = parseApiResponse(response);
   const streamMeta = endpoint.kind === 'urls_stream' ? getStreamMeta(parsed) : null;
-  const hasUrl =
+  const careersMeta = endpoint.kind === 'careers_select' ? getCareersMeta(parsed) : null;
+  const hasPayload =
     endpoint.kind === 'urls_stream'
-      ? (streamMeta && streamMeta.urlCount > 0) || false
-      : Boolean(parsed && parsed.url);
-  const successSignal =
-    endpoint.kind === 'urls_stream'
-      ? is2xx && (streamMeta?.hasList || false)
-      : is2xx && hasUrl;
+      ? (streamMeta?.hasList || false)
+      : endpoint.kind === 'careers_select'
+        ? (careersMeta?.hasEnrichedPrompt || false) && (careersMeta?.hasCareersList || false)
+        : Boolean(parsed && parsed.url);
+  const successSignal = is2xx && hasPayload;
 
   apiSuccess.add(successSignal, { endpoint: endpoint.tag });
-  apiHasUrl.add(hasUrl, { endpoint: endpoint.tag });
+  apiHasUrl.add(hasPayload, { endpoint: endpoint.tag });
   apiReqDuration.add(response.timings.duration, { endpoint: endpoint.tag });
-  apiItemsCount.add(endpoint.kind === 'urls_stream' ? streamMeta?.urlCount || 0 : hasUrl ? 1 : 0, {
-    endpoint: endpoint.tag,
-  });
+  apiItemsCount.add(
+    endpoint.kind === 'urls_stream'
+      ? streamMeta?.urlCount || 0
+      : endpoint.kind === 'careers_select'
+        ? careersMeta?.careersCount || 0
+        : hasPayload
+          ? 1
+          : 0,
+    {
+      endpoint: endpoint.tag,
+    }
+  );
   apiRespBytes.add(response.body ? response.body.length : 0, { endpoint: endpoint.tag });
 
   const checksMap =
@@ -314,18 +391,27 @@ export default function () {
           'status is 2xx': () => is2xx,
           'body contains urls list': () => (streamMeta?.hasList ? true : false),
         }
+      : endpoint.kind === 'careers_select'
+        ? {
+            'status is 2xx': () => is2xx,
+            'body contains suggestedCareers list': () => (careersMeta?.hasCareersList ? true : false),
+            'body contains enrichedPrompt': () => (careersMeta?.hasEnrichedPrompt ? true : false),
+          }
       : {
           'status is 2xx': () => is2xx,
-          'body contains url': () => hasUrl,
+          'body contains url': () => hasPayload,
         };
 
   check(response, checksMap);
   logLiveCall(endpoint, response, {
-    hasUrl,
+    hasUrl: hasPayload,
     parsed,
     prompt,
     hasList: streamMeta?.hasList || false,
     urlsCount: streamMeta?.urlCount || 0,
+    careersCount: careersMeta?.careersCount || 0,
+    hasEnrichedPrompt: careersMeta?.hasEnrichedPrompt || false,
+    isFallback: careersMeta?.isFallback ?? null,
     afterId,
     nextAfterId: streamMeta?.nextAfterId ?? null,
     hasMore: streamMeta?.hasMore ?? null,

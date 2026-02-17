@@ -13,6 +13,8 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `npm run perf:100:google`
 - `npm run perf:dalle` (alias of `perf:dalle:10`)
 - `npm run perf:google` (alias of `perf:google:10`)
+- `npm run perf:careers` (alias of `perf:careers:10`)
+- `npm run perf:google:careers` (alias of `perf:google:careers:10`)
 - `npm run perf:urls` (alias of `perf:urls:10`)
 - `npm run perf:dalle:10`
 - `npm run perf:dalle:50`
@@ -20,11 +22,23 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `npm run perf:google:10`
 - `npm run perf:google:50`
 - `npm run perf:google:100`
+- `npm run perf:careers:10`
+- `npm run perf:careers:50`
+- `npm run perf:careers:50:burst` (alias legacy, equivalent to `perf:careers:50`)
+- `npm run perf:careers:100`
+- `npm run perf:careers:200`
+- `npm run perf:google:careers:10`
+- `npm run perf:google:careers:50`
+- `npm run perf:google:careers:50:burst` (alias legacy, equivalent to `perf:google:careers:50`)
+- `npm run perf:google:careers:100`
+- `npm run perf:google:careers:200`
 - `npm run perf:urls:10`
 - `npm run perf:urls:50`
 - `npm run perf:urls:100`
 - `npm run perf:dalle:live` (1 user, live request/response logs)
 - `npm run perf:google:live` (1 user, live request/response logs)
+- `npm run perf:careers:live` (1 user, live request/response logs)
+- `npm run perf:google:careers:live` (1 user, live request/response logs)
 - `npm run perf:urls:live` (10 calls, 1/s, live logs)
 - `npm run perf:progressive:dalle`
 - `npm run perf:progressive:google`
@@ -36,13 +50,14 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `API_BASE_URL` default: `https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api`
 - `VUS` default: `100`
 - `DURATION` default: `2m`
-- `MODE` values: `both` (default), `dalle`, `google`, `urls`
+- `MODE` values: `both` (default), `dalle`, `google`, `careers`, `google_careers`, `urls`
 - `DALL_E_RATIO` default: `0.5` (used only when `MODE=both`)
 - `THINK_TIME` default: `0.3` seconds
 - `TOTAL_CALLS` default: `0` (if `>0`, run exactly this number of requests)
 - `CONCURRENCY` default: `1` (used with `TOTAL_CALLS`)
 - `MAX_DURATION` default: `30m` (used with `TOTAL_CALLS`)
 - `INTERVAL_SECONDS` default: `0` (if `>0` with `TOTAL_CALLS`, starts one request every N seconds)
+- `HTTP_TIMEOUT` default: `120s` (applied to all HTTP calls in the k6 script)
 - `URLS_LIMIT` default: `12` (used when `MODE=urls`)
 - `URLS_AFTER_ID` default: `0` (used when `MODE=urls`)
 - `URLS_INCLUDE_URL` default: `true` (used when `MODE=urls`)
@@ -65,8 +80,9 @@ Run each step manually, in this order:
 Behavior of these manual commands:
 
 - exact number of backend calls (`10`, `50`, `100`)
-- one request started every second (`INTERVAL_SECONDS=1`)
-- calls can overlap when response time is longer than 1s
+- scripts `<50` calls (ex: `:10`) are staggered (`INTERVAL_SECONDS=1`)
+- scripts `>=50` calls (ex: `:50`, `:100`) run in burst (`CONCURRENCY=TOTAL_CALLS`, `INTERVAL_SECONDS=0`)
+- `perf:careers:200` and `perf:google:careers:200` are paced at 1 call every 200ms (`INTERVAL_SECONDS=0.2`)
 - unlike arrival-rate mode, total completed calls are fixed (`http_reqs.count` = target)
 
 Generated files:
