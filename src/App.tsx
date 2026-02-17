@@ -889,7 +889,7 @@ function App() {
     setLoadingMessageIndex((prev) => pickRandomIndex(AVATAR_LOADING_MESSAGES.length, prev))
     const intervalId = window.setInterval(() => {
       setLoadingMessageIndex((prev) => pickRandomIndex(AVATAR_LOADING_MESSAGES.length, prev))
-    }, 2000)
+    }, 4000)
 
     return () => window.clearInterval(intervalId)
   }, [loading])
