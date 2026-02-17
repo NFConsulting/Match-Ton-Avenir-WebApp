@@ -1,12 +1,4 @@
-﻿import {
-  avatarPostures,
-  avatarStyles,
-  cognitive,
-  developOptions,
-  emotional,
-  interests,
-  social,
-} from '../constants/options'
+﻿import { avatarPostures, avatarStyles } from '../constants/options'
 import type { PromptInput } from '../types'
 
 const buildList = (options: string[] | { label: string }[], selected: Record<string, boolean>) =>
@@ -15,8 +7,6 @@ const buildList = (options: string[] | { label: string }[], selected: Record<str
     .filter((label) => selected[label])
 
 export const buildPrompt = ({
-  strengthsSelected,
-  developSelected,
   chosenPostures,
   chosenStyles,
   avatarGender,
@@ -24,21 +14,10 @@ export const buildPrompt = ({
   hair,
   avatarTeint,
   avatarWords,
-  jobs,
-  exploring,
 }: PromptInput) => {
-  const sportsCompetences = [
-    ...buildList(cognitive, strengthsSelected),
-    ...buildList(emotional, strengthsSelected),
-    ...buildList(social, strengthsSelected),
-  ]
-  const developCompetences = buildList(developOptions, developSelected)
-  const interestList = buildList(interests, strengthsSelected)
   const postures = buildList(avatarPostures, chosenPostures)
   const styles = buildList(avatarStyles, chosenStyles)
   const words = avatarWords.filter(Boolean)
-  const jobList = jobs.filter(Boolean)
-  const competencesCombined = [...sportsCompetences, ...developCompetences]
 
   const lines = [
     'Crée un avatar inspirant représentant une personne jeune adulte (environ 30 ans) avec les',
