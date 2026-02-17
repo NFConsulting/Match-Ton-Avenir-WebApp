@@ -257,6 +257,55 @@ function App() {
     return message
   }
 
+  const buildImageFilename = (candidateId?: string) => {
+    const normalizedId = (candidateId ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
+    if (normalizedId) {
+      return `match-ton-avenir-${normalizedId}.png`
+    }
+
+    const dateStamp = new Date().toISOString().slice(0, 10)
+    return `match-ton-avenir-${dateStamp}.png`
+  }
+
+  const handleDownloadImage = useCallback(async (targetUrl: string, candidateId?: string) => {
+    const url = targetUrl.trim()
+    if (!url) return
+
+    const filename = buildImageFilename(candidateId)
+
+    const clickDownloadLink = (href: string, openInNewTab = false) => {
+      const link = document.createElement('a')
+      link.href = href
+      link.download = filename
+      link.rel = 'noopener'
+      if (openInNewTab) {
+        link.target = '_blank'
+      }
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    }
+
+    try {
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error('download_failed')
+      }
+
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      clickDownloadLink(blobUrl)
+      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch {
+      clickDownloadLink(url, true)
+    }
+  }, [])
+
   const submitPrompt = async (
     prompt: string,
     generator: (p: string) => Promise<{ url: string; revisedPrompt?: string; id?: string }> = generateImage
@@ -594,6 +643,15 @@ function App() {
                       ID : {imageId}
                     </p>
                   )}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      className={buttonOutline}
+                      onClick={() => void handleDownloadImage(imageUrl, imageId)}
+                    >
+                      Télécharger l&apos;image
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -615,7 +673,9 @@ function App() {
       counts.social,
       exploring,
       generatedPrompt,
+      handleDownloadImage,
       hair,
+      imageId,
       imageUrl,
       jobs,
       loading,
@@ -749,6 +809,15 @@ function App() {
             <button className={buttonPrimary} onClick={goToGenerator}>
               Revenir au générateur
             </button>
+            {singleImageUrl && (
+              <button
+                type="button"
+                className={buttonOutline}
+                onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
+              >
+                Télécharger l&apos;image
+              </button>
+            )}
           </div>
         </section>
 
