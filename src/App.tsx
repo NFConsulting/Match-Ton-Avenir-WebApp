@@ -525,7 +525,7 @@ function App() {
               Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              ✅ Sélections
+              Sélections
               <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
             </h3>
             <div className="mt-3">
@@ -549,7 +549,7 @@ function App() {
               Choisis 1 à 3 centres d’intérêt que tu préfères
             </p>
             <h3 className="mt-3 text-base font-semibold text-slate-900">
-              ✅ Sélections
+              Sélections
               <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
             </h3>
             <div className="mt-3">
@@ -971,7 +971,7 @@ function App() {
               🧩 Étape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
-              ↩️ Revenir au début
+              Revenir au début
             </button>
           </div>
 
@@ -1015,7 +1015,7 @@ function App() {
                 </div>
               ) : (
                 <button className={buttonPrimary} onClick={handleNext}>
-                  ➡️ Étape suivante
+                  Étape suivante
                 </button>
               )}
               {loading && (
