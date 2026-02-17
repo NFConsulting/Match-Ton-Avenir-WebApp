@@ -46,7 +46,7 @@ const panelClass =
   'rounded-2xl border border-slate-200/80 bg-white/95 p-6 shadow-[0_20px_70px_rgba(0,0,0,0.12)] backdrop-blur'
 const sectionBlockClass =
   'rounded-2xl border border-brand-500/10 bg-[linear-gradient(135deg,rgb(var(--brand-500)/0.05),rgba(151,151,151,0.08))] p-5 transition hover:border-brand-500/20 hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)]'
-const eyebrowClass = 'text-xs font-bold uppercase tracking-[0.2em] text-brand-500'
+const eyebrowClass = 'text-sm font-bold uppercase tracking-[0.14em] text-brand-500 sm:text-base'
 const chipClass =
   'inline-flex w-fit items-center rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white'
 const countChipClass =
@@ -72,6 +72,39 @@ const spinner = (
 )
 
 const GALLERY_PAGE_SIZE = 12
+const AVATAR_LOADING_MESSAGES = [
+  "On peaufine ton avatar, il veut etre incroyable.",
+  "Ton futur toi ajuste sa meilleure pose.",
+  "Calibration du style en cours... swag detecte.",
+  "On melange tes talents avec une pointe de magie.",
+  "Ton avatar choisit sa tenue de champion.",
+  "Les idees brillantes arrivent en file indienne.",
+  "Ton double numerique prend confiance.",
+  "On ajoute 2 grammes de charisme et 1 sourire.",
+  "Le mode creatif chauffe tranquillement.",
+  "Ton avatar fait des pompes imaginaires.",
+  "Assemblage des competences... presque pret.",
+  "Le cerveau de l'avatar fait des etincelles.",
+  "On aligne style, posture et energie.",
+  "Ton futur toi repete son entree classe.",
+  "Les details cool sont en train de pop.",
+  "Patience, ton avatar se met en mode legendaire.",
+  "Verification finale: look valide, attitude valide.",
+  "Ton avatar prend son elan pour apparaitre.",
+  "On finit la touche wow juste pour toi.",
+  "Encore un instant: ton avatar arrive en scene.",
+]
+
+const pickRandomIndex = (max: number, exclude: number = -1) => {
+  if (max <= 1) {
+    return 0
+  }
+  let next = Math.floor(Math.random() * max)
+  while (next === exclude) {
+    next = Math.floor(Math.random() * max)
+  }
+  return next
+}
 
 function App() {
   const [route, setRoute] = useState<{ view: 'form' | 'portfolio' | 'single'; imageId?: string }>(() => {
@@ -99,6 +132,9 @@ function App() {
   const [suggestedCareers, setSuggestedCareers] = useState<string[]>([])
   const [careersIsFallback, setCareersIsFallback] = useState<boolean | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(() =>
+    pickRandomIndex(AVATAR_LOADING_MESSAGES.length)
+  )
 
   const [view, setView] = useState<'form' | 'portfolio'>('form')
   const [step, setStep] = useState(0)
@@ -514,7 +550,7 @@ function App() {
             </p>
             <div className="mt-5 space-y-6">
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900">
                   <Emoji symbol="🧠" /> Compétences cognitives — Esprit clair
                   <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
                 </h3>
@@ -530,7 +566,7 @@ function App() {
               </div>
               <div className="h-px bg-slate-200/80" />
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900">
                   <Emoji symbol="❤️" /> Compétences émotionnelles — Cœur calme
                   <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
                 </h3>
@@ -546,7 +582,7 @@ function App() {
               </div>
               <div className="h-px bg-slate-200/80" />
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900">
                   <Emoji symbol="🤝" /> Compétences sociales — Bras ouverts
                   <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
                 </h3>
@@ -580,7 +616,7 @@ function App() {
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
-            <h3 className="mt-3 text-base font-semibold text-slate-900">
+            <h3 className="mt-3 text-lg font-semibold text-slate-900">
               Sélections
               <span className={`${countChipClass} ml-3`}>{counts.develop} sélection(s)</span>
             </h3>
@@ -610,7 +646,7 @@ function App() {
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 centres d’intérêt que tu préfères
             </p>
-            <h3 className="mt-3 text-base font-semibold text-slate-900">
+            <h3 className="mt-3 text-lg font-semibold text-slate-900">
               Sélections
               <span className={`${countChipClass} ml-3`}>{counts.interests} sélection(s)</span>
             </h3>
@@ -744,7 +780,7 @@ function App() {
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
                 <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 <div className="space-y-1 px-5 py-4">
-                  <p className="text-base font-semibold text-slate-900">
+                  <p className="text-lg font-semibold text-slate-900">
                     <Emoji symbol="🖼️" /> Image renvoyée par l’API
                   </p>
                   {imageId && (
@@ -844,6 +880,19 @@ function App() {
   useEffect(() => {
     setShowValidation(false)
   }, [step])
+
+  useEffect(() => {
+    if (!loading) {
+      return
+    }
+
+    setLoadingMessageIndex((prev) => pickRandomIndex(AVATAR_LOADING_MESSAGES.length, prev))
+    const intervalId = window.setInterval(() => {
+      setLoadingMessageIndex((prev) => pickRandomIndex(AVATAR_LOADING_MESSAGES.length, prev))
+    }, 2000)
+
+    return () => window.clearInterval(intervalId)
+  }, [loading])
 
   // Single image page: try to resolve url by id
   useEffect(() => {
@@ -1148,7 +1197,17 @@ function App() {
                 </button>
               )}
               {loading && (
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
+                <div className="flex min-w-[260px] items-center gap-3 rounded-xl border border-brand-500/20 bg-brand-500/5 px-3 py-2">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
+                  <div className="w-full max-w-[320px]">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" />
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-slate-700">
+                      {AVATAR_LOADING_MESSAGES[loadingMessageIndex]}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </div>
