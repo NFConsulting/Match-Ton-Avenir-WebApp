@@ -105,15 +105,17 @@ Generated files:
 - `tests/perf/reports/manual/urls-50-raw.json`
 - `tests/perf/reports/manual/urls-100-summary.json`
 - `tests/perf/reports/manual/urls-100-raw.json`
+- `tests/perf/reports/manual/*-console.log` (saved automatically for each npm perf script run)
 
 Report format:
 
 - `*-summary.json`: aggregated metrics (count, rate, p90, p95, etc.)
 - `*-raw.json`: detailed event timeline for deeper analysis
+- `*-console.log`: k6 console output, including `[LIVE]` response previews
 
 During run:
 
-- live output appears directly in terminal by default
+- console logs are saved to `tests/perf/reports/manual/*-console.log` on each run
 - you can disable live logs with `LIVE_LOG=0`
 - regular k6 progress/summary always appears in terminal
 

@@ -1,3 +1,5 @@
+﻿import Emoji from './Emoji'
+
 type JobsSectionProps = {
   jobs: string[]
   onJobChange: (index: number, value: string) => void
@@ -9,7 +11,7 @@ const JobsSection = ({ jobs, onJobChange, exploring, onToggleExploring }: JobsSe
   <div className="space-y-3">
     {jobs.map((value, idx) => (
       <label key={idx} className="grid gap-1 text-sm font-medium text-slate-700">
-        💼 Métier {idx + 1}
+        <Emoji symbol="💼" /> Métier {idx + 1}
         <input
           value={value}
           onChange={(event) => onJobChange(idx, event.target.value)}
@@ -25,7 +27,9 @@ const JobsSection = ({ jobs, onJobChange, exploring, onToggleExploring }: JobsSe
         onChange={onToggleExploring}
         className="h-4 w-4 accent-brand-500"
       />
-      🧭 Je suis encore en exploration (et c’est normal)
+      <span>
+        <Emoji symbol="🧭" /> Je suis encore en exploration (et c'est normal)
+      </span>
     </label>
   </div>
 )

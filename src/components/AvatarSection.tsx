@@ -1,4 +1,5 @@
-import CheckboxList from './CheckboxList'
+﻿import CheckboxList from './CheckboxList'
+import Emoji from './Emoji'
 import { avatarPostures, avatarStyles, avatarTeints } from '../constants/options'
 
 type AvatarSectionProps = {
@@ -36,7 +37,9 @@ const AvatarSection = ({
 }: AvatarSectionProps) => (
   <div className="space-y-6">
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">👤 Genre de l’avatar</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="👤" /> Genre de l'avatar
+      </p>
       <div className="flex flex-wrap gap-3">
         {['Féminin', 'Masculin', 'Peu importe'].map((option) => (
           <label
@@ -58,7 +61,9 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">😊 Expression du visage</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="😊" /> Expression du visage
+      </p>
       <div className="flex flex-wrap gap-3">
         {['Confiant', 'Calme', 'Inspiré', 'Curieux'].map((option) => (
           <label
@@ -80,7 +85,9 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">🕺 Posture</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="🕺" /> Posture
+      </p>
       <CheckboxList
         options={avatarPostures.map((label) => ({ label }))}
         selected={chosenPostures}
@@ -91,7 +98,7 @@ const AvatarSection = ({
 
     <div className="space-y-2">
       <p className="text-sm font-semibold text-slate-800">
-        💇 Cheveux (longueur, style, couleur si souhaité)
+        <Emoji symbol="💇" /> Cheveux (longueur, style, couleur si souhaité)
       </p>
       <input
         placeholder="Ex : mi-longs, ondulés, mèches cuivrées"
@@ -102,7 +109,9 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">👕 Style vestimentaire</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="👕" /> Style vestimentaire
+      </p>
       <CheckboxList
         options={avatarStyles.map((label) => ({ label }))}
         selected={chosenStyles}
@@ -112,7 +121,9 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">🎨 Teint de l’avatar</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="🎨" /> Teint de l'avatar
+      </p>
       <div className="flex flex-wrap gap-3">
         {avatarTeints.map((option) => (
           <label
@@ -134,7 +145,9 @@ const AvatarSection = ({
     </div>
 
     <div className="space-y-2">
-      <p className="text-sm font-semibold text-slate-800">📝 3 mots pour décrire mon avatar</p>
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="📝" /> 3 mots pour décrire mon avatar
+      </p>
       <div className="space-y-2">
         {[0, 1, 2].map((idx) => (
           <label key={idx} className="grid gap-1 text-sm font-medium text-slate-700">

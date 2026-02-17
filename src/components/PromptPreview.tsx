@@ -1,4 +1,5 @@
-import type { ChangeEvent } from 'react'
+﻿import type { ChangeEvent } from 'react'
+import Emoji from './Emoji'
 
 type PromptPreviewProps = {
   prompt: string
@@ -10,7 +11,7 @@ type PromptPreviewProps = {
 const PromptPreview = ({ prompt, onChange, onSend, loading }: PromptPreviewProps) => (
   <div className="space-y-3">
     <p className="text-sm font-semibold text-slate-800">
-      🧠 Prompt généré (envoyé à l’API)
+      <Emoji symbol="🧠" /> Prompt généré (envoyé à l'API)
     </p>
     <textarea
       value={prompt}
@@ -26,7 +27,7 @@ const PromptPreview = ({ prompt, onChange, onSend, loading }: PromptPreviewProps
         onClick={onSend}
         disabled={loading}
       >
-        📤 Envoyer ce prompt à l’API
+        <Emoji symbol="📤" /> Envoyer ce prompt à l'API
       </button>
     </div>
   </div>

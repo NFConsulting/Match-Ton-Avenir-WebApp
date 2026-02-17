@@ -1,6 +1,7 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react'
 import AvatarSection from './components/AvatarSection'
 import CheckboxList from './components/CheckboxList'
+import Emoji from './components/Emoji'
 import JobsSection from './components/JobsSection'
 import PromptPreview from './components/PromptPreview'
 import {
@@ -50,6 +51,10 @@ const chipClass =
   'inline-flex w-fit items-center rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white'
 const countChipClass =
   'inline-flex items-center rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-900'
+const careersSpotlightClass =
+  'rounded-3xl border-2 border-brand-500/35 bg-[linear-gradient(140deg,rgb(var(--brand-500)/0.18),rgba(255,255,255,0.98))] px-6 py-6 shadow-[0_22px_50px_rgba(211,8,116,0.22)]'
+const careersPillClass =
+  'inline-flex min-h-[3rem] items-center rounded-2xl border border-brand-500/25 bg-white px-4 py-2 text-base font-semibold text-slate-900 shadow-[0_8px_18px_rgba(0,0,0,0.08)] sm:text-lg'
 
 const buttonBase =
   'inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400/60 disabled:pointer-events-none disabled:opacity-50'
@@ -494,17 +499,23 @@ function App() {
     () => [
       {
         id: 'strengths',
-        label: '🏅 Ce que j’ai montré pendant le sport',
+        label: (
+          <>
+            <Emoji symbol="🏅" /> Ce que j’ai montré pendant le sport
+          </>
+        ),
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>1. 🏅 CE QUE J’AI MONTRÉ PENDANT LE SPORT</p>
+            <p className={eyebrowClass}>
+              1. <Emoji symbol="🏅" /> CE QUE J’AI MONTRÉ PENDANT LE SPORT
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 3 à 5 compétences que tu as le plus montrées
             </p>
             <div className="mt-5 space-y-6">
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  🧠 Compétences cognitives — Esprit clair
+                  <Emoji symbol="🧠" /> Compétences cognitives — Esprit clair
                   <span className={`${countChipClass} ml-3`}>{counts.cognitive} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -520,7 +531,7 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  ❤️ Compétences émotionnelles — Cœur calme
+                  <Emoji symbol="❤️" /> Compétences émotionnelles — Cœur calme
                   <span className={`${countChipClass} ml-3`}>{counts.emotional} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -536,7 +547,7 @@ function App() {
               <div className="h-px bg-slate-200/80" />
               <div>
                 <h3 className="text-base font-semibold text-slate-900">
-                  🤝 Compétences sociales — Bras ouverts
+                  <Emoji symbol="🤝" /> Compétences sociales — Bras ouverts
                   <span className={`${countChipClass} ml-3`}>{counts.social} sélection(s)</span>
                 </h3>
                 <div className="mt-3">
@@ -555,10 +566,17 @@ function App() {
       },
       {
         id: 'develop',
-        label: '📈 Compétences à développer',
+        label: (
+          <>
+            <Emoji symbol="📈" /> Compétences à développer
+          </>
+        ),
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>📈 Tes compétences sont évolutives, qu’aimerais tu développer davantage ?</p>
+            <p className={eyebrowClass}>
+              <Emoji symbol="📈" /> Tes compétences sont évolutives, qu’aimerais tu développer
+              davantage ?
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 compétences que tu souhaites améliorer
             </p>
@@ -579,10 +597,16 @@ function App() {
       },
       {
         id: 'interests',
-        label: '💡 Centres d’intérêt',
+        label: (
+          <>
+            <Emoji symbol="💡" /> Centres d’intérêt
+          </>
+        ),
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>2. 💡 MES CENTRES D’INTÉRÊT</p>
+            <p className={eyebrowClass}>
+              2. <Emoji symbol="💡" /> MES CENTRES D’INTÉRÊT
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Choisis 1 à 3 centres d’intérêt que tu préfères
             </p>
@@ -603,10 +627,16 @@ function App() {
       },
       {
         id: 'jobs',
-        label: '🧭 Métiers explorés',
+        label: (
+          <>
+            <Emoji symbol="🧭" /> Métiers explorés
+          </>
+        ),
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>3. 🧭 MÉTIERS SUR LESQUELS JE ME PROJETTE :</p>
+            <p className={eyebrowClass}>
+              3. <Emoji symbol="🧭" /> MÉTIERS SUR LESQUELS JE ME PROJETTE :
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Écris 1 à 3 métiers qui t’ont le plus intéressé
             </p>
@@ -627,10 +657,16 @@ function App() {
       },
       {
         id: 'avatar',
-        label: '🧑‍🚀 Détails de l’avatar',
+        label: (
+          <>
+            <Emoji symbol="🧑‍🚀" /> Détails de l’avatar
+          </>
+        ),
         content: (
           <div className={sectionBlockClass}>
-            <p className={eyebrowClass}>4. 🧑‍🚀 À QUOI RESSEMBLE MON AVATAR</p>
+            <p className={eyebrowClass}>
+              4. <Emoji symbol="🧑‍🚀" /> À QUOI RESSEMBLE MON AVATAR
+            </p>
             <p className="mt-2 text-sm text-slate-600">
               Imagine ton futur toi et complète les infos ci-dessous
             </p>
@@ -662,7 +698,11 @@ function App() {
       },
       {
         id: 'preview',
-        label: '🎨 Prévisualisation & génération',
+        label: (
+          <>
+            <Emoji symbol="🎨" /> Prévisualisation & génération
+          </>
+        ),
         content: (
           <div className="space-y-4">
             <PromptPreview
@@ -672,20 +712,29 @@ function App() {
               loading={loading}
             />
             {careersToDisplay.length > 0 && (
-              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
-                <p className="text-base font-semibold text-slate-900">🧭 Métiers suggérés</p>
-                <div className="mt-3 flex flex-wrap gap-2">
+              <div className={careersSpotlightClass}>
+                <div className="inline-flex rounded-full bg-brand-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                  A ne pas louper
+                </div>
+                <p className="mt-3 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+                  <Emoji symbol="🧭" /> Métiers conseillés
+                </p>
+                <p className="mt-1 text-sm text-slate-700 sm:text-base">
+                  Les 3 pistes les plus pertinentes pour ton profil
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
                   {careersToDisplay.map((career, index) => (
                     <span
                       key={`${career}-${index}`}
-                      className="inline-flex items-center rounded-full bg-brand-500/10 px-3 py-1 text-sm font-medium text-slate-900"
+                      className={careersPillClass}
                     >
+                      <span className="mr-2 text-brand-600">{index + 1}.</span>
                       {career}
                     </span>
                   ))}
                 </div>
                 {careersIsFallback !== null && (
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-3 text-xs font-medium text-slate-600">
                     {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
                   </p>
                 )}
@@ -695,7 +744,9 @@ function App() {
               <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
                 <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 <div className="space-y-1 px-5 py-4">
-                  <p className="text-base font-semibold text-slate-900">🖼️ Image renvoyée par l’API</p>
+                  <p className="text-base font-semibold text-slate-900">
+                    <Emoji symbol="🖼️" /> Image renvoyée par l’API
+                  </p>
                   {imageId && (
                     <p className="text-sm text-slate-600">
                       ID : {imageId}
@@ -707,7 +758,7 @@ function App() {
                       className={buttonOutline}
                       onClick={() => void handleDownloadImage(imageUrl, imageId)}
                     >
-                      ⬇️ Télécharger l&apos;image
+                      <Emoji symbol="⬇️" /> Télécharger l&apos;image
                     </button>
                   </div>
                 </div>
@@ -867,11 +918,11 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            🖼️ Aperçu de l’image
+            <Emoji symbol="🖼️" /> Aperçu de l’image
           </h1>
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
-              ↩️ Revenir au générateur
+              <Emoji symbol="↩️" /> Revenir au générateur
             </button>
             {singleImageUrl && (
               <button
@@ -879,7 +930,7 @@ function App() {
                 className={buttonOutline}
                 onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
               >
-                ⬇️ Télécharger l&apos;image
+                <Emoji symbol="⬇️" /> Télécharger l&apos;image
               </button>
             )}
           </div>
@@ -887,20 +938,29 @@ function App() {
 
         <section className={panelClass}>
           {careersToDisplay.length > 0 && (
-            <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_10px_28px_rgba(0,0,0,0.08)]">
-              <p className="text-base font-semibold text-slate-900">🧭 Métiers suggérés</p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <div className={`mb-5 ${careersSpotlightClass}`}>
+              <div className="inline-flex rounded-full bg-brand-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                A ne pas louper
+              </div>
+              <p className="mt-3 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
+                <Emoji symbol="🧭" /> Métiers conseillés
+              </p>
+              <p className="mt-1 text-sm text-slate-700 sm:text-base">
+                Les 3 pistes les plus pertinentes pour ton profil
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 {careersToDisplay.map((career, index) => (
                   <span
                     key={`${career}-${index}`}
-                    className="inline-flex items-center rounded-full bg-brand-500/10 px-3 py-1 text-sm font-medium text-slate-900"
+                    className={careersPillClass}
                   >
+                    <span className="mr-2 text-brand-600">{index + 1}.</span>
                     {career}
                   </span>
                 ))}
               </div>
               {careersIsFallback !== null && (
-                <p className="mt-2 text-xs text-slate-500">
+                <p className="mt-3 text-xs font-medium text-slate-600">
                   {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
                 </p>
               )}
@@ -926,10 +986,10 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            🗂️ Galerie des images générées
+            <Emoji symbol="🗂️" /> Galerie des images générées
           </h1>
           <p className="text-sm text-slate-600">
-            ✨ Liste de toutes les images générées
+            <Emoji symbol="✨" /> Liste de toutes les images générées
           </p>
           <div className="flex flex-wrap gap-3 pt-1">
             <button
@@ -938,14 +998,14 @@ function App() {
                 goToGenerator()
               }}
             >
-              ↩️ Retour au générateur
+              <Emoji symbol="↩️" /> Retour au générateur
             </button>
             <button
               className={buttonPrimary}
               onClick={() => setPortfolioReloadKey((prev) => prev + 1)}
               disabled={portfolioLoading}
             >
-              🔄 Rafraîchir la liste
+              <Emoji symbol="🔄" /> Rafraîchir la liste
             </button>
           </div>
         </section>
@@ -958,7 +1018,7 @@ function App() {
               <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                 {imageUrls.length === 0 && (
                   <p className="text-sm text-slate-500">
-                    😶 Il n&apos;y a pas encore d&apos;image pour le moment :(
+                    <Emoji symbol="😶" /> Il n&apos;y a pas encore d&apos;image pour le moment :(
                   </p>
                 )}
                 {imageUrls.map(({ id, url }) => (
@@ -1026,10 +1086,10 @@ function App() {
       <section className={heroClass}>
         <span className={chipClass}>Match ton Avenir</span>
         <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-          JE CRÉE MON AVATAR – MATCH TON AVENIR 🚀
+          JE CRÉE MON AVATAR – MATCH TON AVENIR <Emoji symbol="🚀" />
         </h1>
         <p className="text-lg font-semibold text-slate-900">
-          Et si tu pouvais rencontrer ton futur toi ? ✨
+          Et si tu pouvais rencontrer ton futur toi ? <Emoji symbol="✨" />
         </p>
         <p className="text-sm text-slate-600 sm:text-base">
           Match ton Avenir est un espace pour explorer, tester et imaginer. Prends 5 à 10 minutes
@@ -1042,7 +1102,7 @@ function App() {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-slate-700">
-              🧩 Étape {step + 1} / {totalSteps}
+              <Emoji symbol="🧩" /> Étape {step + 1} / {totalSteps}
             </p>
             <button className={buttonOutline} onClick={() => setStep(0)} disabled={step === 0}>
               Revenir au début
@@ -1072,14 +1132,14 @@ function App() {
                     onClick={handleGenerate}
                     disabled={loading}
                   >
-                    🎯 Générer mon avatar (DALL·E)
+                    <Emoji symbol="🎯" /> Générer mon avatar (DALL·E)
                   </button>
                   <button
                     className={buttonOutline}
                     onClick={handleGenerateGoogle}
                     disabled={loading}
                   >
-                    ✨ Générer avec Google
+                    <Emoji symbol="✨" /> Générer avec Google
                   </button>
                 </div>
               ) : (
