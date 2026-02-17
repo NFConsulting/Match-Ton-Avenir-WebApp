@@ -657,15 +657,6 @@ function App() {
     resetFormState()
   }
 
-  const goToPortfolio = () => {
-    window.history.pushState({}, '', '/')
-    setRoute({ view: 'form' })
-    setView('portfolio')
-    setLightboxUrl(null)
-    setImageUrls([])
-    setPortfolioReloadKey((prev) => prev + 1) // force reload on (re)entrée
-  }
-
   const goNext = () => setStep((prev) => Math.min(prev + 1, totalSteps - 1))
   const goPrev = () => setStep((prev) => Math.max(prev - 1, 0))
   const currentStepId = formSteps[step].id
@@ -757,9 +748,6 @@ function App() {
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
               Revenir au générateur
-            </button>
-            <button className={buttonOutline} onClick={goToPortfolio}>
-              Afficher la galerie des images
             </button>
           </div>
         </section>
@@ -925,11 +913,6 @@ function App() {
               <button className={buttonOutline} onClick={goPrev} disabled={step === 0}>
                 Précédent
               </button>
-              {(step === 0 || isLastStep) && (
-                <button className={buttonOutline} onClick={goToPortfolio}>
-                  Ouvrir la galerie des images
-                </button>
-              )}
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {showValidation && !currentStepValid && validationMessage[currentStepId] && (
