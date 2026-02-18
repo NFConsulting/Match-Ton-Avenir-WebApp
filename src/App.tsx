@@ -234,26 +234,26 @@ const spinner = (
 
 const GALLERY_PAGE_SIZE = 12
 const AVATAR_LOADING_MESSAGES = [
-  "On peaufine ton avatar, il veut etre incroyable.",
+  "On peaufine ton avatar, il veut être incroyable.",
   "Ton futur toi ajuste sa meilleure pose.",
-  "Calibration du style en cours... swag detecte.",
-  "On melange tes talents avec une pointe de magie.",
+  "Calibration du style en cours... swag détecté.",
+  "On mélange tes talents avec une pointe de magie.",
   "Ton avatar choisit sa tenue de champion.",
-  "Les idees brillantes arrivent en file indienne.",
-  "Ton double numerique prend confiance.",
+  "Les idées brillantes arrivent en file indienne.",
+  "Ton double numérique prend confiance.",
   "On ajoute 2 grammes de charisme et 1 sourire.",
-  "Le mode creatif chauffe tranquillement.",
+  "Le mode créatif chauffe tranquillement.",
   "Ton avatar fait des pompes imaginaires.",
-  "Assemblage des competences... presque pret.",
-  "Le cerveau de l'avatar fait des etincelles.",
-  "On aligne style, posture et energie.",
-  "Ton futur toi repete son entree classe.",
-  "Les details cool sont en train de pop.",
-  "Patience, ton avatar se met en mode legendaire.",
-  "Verification finale: look valide, attitude valide.",
-  "Ton avatar prend son elan pour apparaitre.",
+  "Assemblage des compétences... presque prêt.",
+  "Le cerveau de l'avatar fait des étincelles.",
+  "On aligne style, posture et énergie.",
+  "Ton futur toi répète son entrée classe.",
+  "Les détails cool sont en train de pop.",
+  "Patience, ton avatar se met en mode légendaire.",
+  "Vérification finale : look validé, attitude validée.",
+  "Ton avatar prend son élan pour apparaître.",
   "On finit la touche wow juste pour toi.",
-  "Encore un instant: ton avatar arrive en scene.",
+  "Encore un instant : ton avatar arrive en scène.",
 ]
 
 const pickRandomIndex = (max: number, exclude: number = -1) => {
@@ -413,7 +413,7 @@ function App() {
     hasAvatarHair &&
     hasAvatarTeint &&
     hasAvatarStyle
-  const careersToDisplay = suggestedCareers.slice(0, 3)
+  const careersToDisplay = suggestedCareers
   const selectedStrengthsFromStart = strengthLabels.filter((label) => strengthsSelected[label])
 
   const isStepValid = (stepId: string) => {
@@ -549,7 +549,7 @@ function App() {
     try {
       const careersData = await careersSelector(cleanedPrompt)
       const careers = Array.isArray(careersData.suggestedCareers)
-        ? careersData.suggestedCareers.filter((career) => typeof career === 'string').slice(0, 3)
+        ? careersData.suggestedCareers.filter((career) => typeof career === 'string')
         : []
       const enrichedPrompt = (careersData.enrichedPrompt || cleanedPrompt).trim()
 
@@ -559,7 +559,7 @@ function App() {
       const data = await generator(enrichedPrompt, careers)
 
       const finalCareers = Array.isArray(data.suggestedCareers)
-        ? data.suggestedCareers.filter((career) => typeof career === 'string').slice(0, 3)
+        ? data.suggestedCareers.filter((career) => typeof career === 'string')
         : careers
       setSuggestedCareers(finalCareers)
 
