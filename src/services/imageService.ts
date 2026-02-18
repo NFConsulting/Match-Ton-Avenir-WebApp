@@ -4,9 +4,7 @@ const BASE_API_URL =
   import.meta.env.VITE_API_URL ??
   'https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api'
 
-const API_URL = `${BASE_API_URL}/image`
 const GOOGLE_API_URL = `${BASE_API_URL}/image/google`
-const CAREERS_API_URL = `${BASE_API_URL}/image/careers`
 const GOOGLE_CAREERS_API_URL = `${BASE_API_URL}/image/google/careers`
 const DEFAULT_URLS_PAGE_SIZE = 12
 const MAX_FULL_FETCH_PAGES = 500
@@ -178,14 +176,8 @@ const extractHasMore = (data: ImageUrlsApiShape): boolean | undefined => {
   return undefined
 }
 
-export const selectCareers = async (prompt: string): Promise<CareersResponse> =>
-  callCareersApi(CAREERS_API_URL, prompt)
-
 export const selectCareersGoogle = async (prompt: string): Promise<CareersResponse> =>
   callCareersApi(GOOGLE_CAREERS_API_URL, prompt)
-
-export const generateImage = async (prompt: string, suggestedCareers?: string[]): Promise<ImageResponse> =>
-  callImageApi(API_URL, prompt, suggestedCareers)
 
 export const generateImageGoogle = async (
   prompt: string,

@@ -1297,13 +1297,13 @@ function App() {
                 </button>
               )}
               {loading && (
-                <div className="flex min-w-[260px] items-center gap-3 rounded-xl border border-brand-500/20 bg-brand-500/5 px-3 py-2">
+                <div className="flex w-full max-w-[620px] shrink-0 items-center gap-3 rounded-xl border border-brand-500/20 bg-brand-500/5 px-3 py-2 sm:w-[620px]">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-500" />
-                  <div className="w-full max-w-[320px]">
+                  <div className="w-full min-w-0">
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200">
                       <div className="h-full w-1/2 animate-pulse rounded-full bg-brand-500" />
                     </div>
-                    <p className="mt-1 text-sm font-medium text-slate-700">
+                    <p className="mt-1 truncate whitespace-nowrap text-sm font-medium text-slate-700">
                       {AVATAR_LOADING_MESSAGES[loadingMessageIndex]}
                     </p>
                   </div>
