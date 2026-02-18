@@ -6,16 +6,24 @@ This folder contains k6 scripts for image generation performance testing.
 
 Install `k6` and make sure `k6` is available in your PATH.
 
+## Pacing policy
+
+- All npm `perf:*` k6 commands are now paced with `INTERVAL_SECONDS=0.1` (1 call every 100ms).
+- Commands using fixed call counts (`:10`, `:50`, `:100`, `:200`) keep the same `TOTAL_CALLS`, but are no longer burst mode.
+- New duplicated commands are available for a long run at 1 call every 500ms during 10 minutes (`TOTAL_CALLS=1200`, `INTERVAL_SECONDS=0.5`).
+
 ## Commands
 
-- `npm run perf:100`
-- `npm run perf:100:dalle`
-- `npm run perf:100:google`
+Core aliases:
+
 - `npm run perf:dalle` (alias of `perf:dalle:10`)
 - `npm run perf:google` (alias of `perf:google:10`)
 - `npm run perf:careers` (alias of `perf:careers:10`)
 - `npm run perf:google:careers` (alias of `perf:google:careers:10`)
 - `npm run perf:urls` (alias of `perf:urls:10`)
+
+Fixed-count suites (paced at 100ms):
+
 - `npm run perf:dalle:10`
 - `npm run perf:dalle:50`
 - `npm run perf:dalle:100`
@@ -24,35 +32,55 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `npm run perf:google:100`
 - `npm run perf:careers:10`
 - `npm run perf:careers:50`
-- `npm run perf:careers:50:burst` (alias legacy, equivalent to `perf:careers:50`)
+- `npm run perf:careers:50:burst` (legacy alias)
 - `npm run perf:careers:100`
 - `npm run perf:careers:200`
 - `npm run perf:google:careers:10`
 - `npm run perf:google:careers:50`
-- `npm run perf:google:careers:50:burst` (alias legacy, equivalent to `perf:google:careers:50`)
+- `npm run perf:google:careers:50:burst` (legacy alias)
 - `npm run perf:google:careers:100`
 - `npm run perf:google:careers:200`
 - `npm run perf:urls:10`
 - `npm run perf:urls:50`
 - `npm run perf:urls:100`
-- `npm run perf:dalle:live` (1 user, live request/response logs)
-- `npm run perf:google:live` (1 user, live request/response logs)
-- `npm run perf:careers:live` (1 user, live request/response logs)
-- `npm run perf:google:careers:live` (1 user, live request/response logs)
-- `npm run perf:urls:live` (10 calls, 1/s, live logs)
+
+Other 100ms commands:
+
+- `npm run perf:100`
+- `npm run perf:100:dalle`
+- `npm run perf:100:google`
+- `npm run perf:100:careers`
+- `npm run perf:100:google:careers`
+- `npm run perf:dalle:live`
+- `npm run perf:google:live`
+- `npm run perf:careers:live`
+- `npm run perf:google:careers:live`
+- `npm run perf:urls:live`
+
+New duplicated 500ms / 10m commands:
+
+- `npm run perf:dalle:500ms:10m`
+- `npm run perf:google:500ms:10m`
+- `npm run perf:careers:500ms:10m`
+- `npm run perf:google:careers:500ms:10m`
+- `npm run perf:urls:500ms:10m`
+
+Progressive commands:
+
 - `npm run perf:progressive:dalle`
 - `npm run perf:progressive:google`
 - `npm run perf:progressive:urls`
 - `npm run perf:progressive`
+- `npm run perf:progressive:dalle:500ms:10m`
+- `npm run perf:progressive:google:500ms:10m`
+- `npm run perf:progressive:urls:500ms:10m`
+- `npm run perf:progressive:500ms:10m`
 
 ## Optional environment variables
 
 - `API_BASE_URL` default: `https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api`
-- `VUS` default: `100`
-- `DURATION` default: `2m`
 - `MODE` values: `both` (default), `dalle`, `google`, `careers`, `google_careers`, `urls`
 - `DALL_E_RATIO` default: `0.5` (used only when `MODE=both`)
-- `THINK_TIME` default: `0.3` seconds
 - `TOTAL_CALLS` default: `0` (if `>0`, run exactly this number of requests)
 - `CONCURRENCY` default: `1` (used with `TOTAL_CALLS`)
 - `MAX_DURATION` default: `30m` (used with `TOTAL_CALLS`)
@@ -65,59 +93,6 @@ Install `k6` and make sure `k6` is available in your PATH.
 - `LIVE_LOG` default: enabled
 - `LIVE_LOG` values: set `0|false|no|off` to disable live call/response lines
 - `LIVE_LOG_BODY_CHARS` default: `220` chars for response body preview
-
-## Manual workflow requested
-
-Run each step manually, in this order:
-
-1. `npm run perf:dalle:10`
-2. `npm run perf:dalle:50`
-3. `npm run perf:dalle:100`
-4. `npm run perf:google:10`
-5. `npm run perf:google:50`
-6. `npm run perf:google:100`
-
-Behavior of these manual commands:
-
-- exact number of backend calls (`10`, `50`, `100`)
-- scripts `<50` calls (ex: `:10`) are staggered (`INTERVAL_SECONDS=1`)
-- scripts `>=50` calls (ex: `:50`, `:100`) run in burst (`CONCURRENCY=TOTAL_CALLS`, `INTERVAL_SECONDS=0`)
-- `perf:careers:200` and `perf:google:careers:200` are paced at 1 call every 200ms (`INTERVAL_SECONDS=0.2`)
-- unlike arrival-rate mode, total completed calls are fixed (`http_reqs.count` = target)
-
-Generated files:
-
-- `tests/perf/reports/manual/dalle-10-summary.json`
-- `tests/perf/reports/manual/dalle-10-raw.json`
-- `tests/perf/reports/manual/dalle-50-summary.json`
-- `tests/perf/reports/manual/dalle-50-raw.json`
-- `tests/perf/reports/manual/dalle-100-summary.json`
-- `tests/perf/reports/manual/dalle-100-raw.json`
-- `tests/perf/reports/manual/google-10-summary.json`
-- `tests/perf/reports/manual/google-10-raw.json`
-- `tests/perf/reports/manual/google-50-summary.json`
-- `tests/perf/reports/manual/google-50-raw.json`
-- `tests/perf/reports/manual/google-100-summary.json`
-- `tests/perf/reports/manual/google-100-raw.json`
-- `tests/perf/reports/manual/urls-10-summary.json`
-- `tests/perf/reports/manual/urls-10-raw.json`
-- `tests/perf/reports/manual/urls-50-summary.json`
-- `tests/perf/reports/manual/urls-50-raw.json`
-- `tests/perf/reports/manual/urls-100-summary.json`
-- `tests/perf/reports/manual/urls-100-raw.json`
-- `tests/perf/reports/manual/*-console.log` (saved automatically for each npm perf script run)
-
-Report format:
-
-- `*-summary.json`: aggregated metrics (count, rate, p90, p95, etc.)
-- `*-raw.json`: detailed event timeline for deeper analysis
-- `*-console.log`: k6 console output, including `[LIVE]` response previews
-
-During run:
-
-- console logs are saved to `tests/perf/reports/manual/*-console.log` on each run
-- you can disable live logs with `LIVE_LOG=0`
-- regular k6 progress/summary always appears in terminal
 
 ## Progressive workflow (optional)
 
@@ -139,21 +114,27 @@ Or run both sequentially:
 npm run perf:progressive
 ```
 
-Each progressive run executes 3 load levels automatically: `10`, `50`, `100` VUs.
+Progressive runs use fixed-call pacing and execute the configured concurrency steps (default: `10`, `50`, `100`).
 
 ## Reports and metrics
 
-Reports are written to:
+Manual scripts write to:
 
-- `tests/perf/reports/<mode>/<timestamp>/summary-vus10.json`
-- `tests/perf/reports/<mode>/<timestamp>/summary-vus50.json`
-- `tests/perf/reports/<mode>/<timestamp>/summary-vus100.json`
-- `tests/perf/reports/<mode>/<timestamp>/raw-vus*.json`
-- `tests/perf/reports/<mode>/<timestamp>/console-vus*.log`
+- `tests/perf/reports/manual/*-summary.json`
+- `tests/perf/reports/manual/*-raw.json`
+- `tests/perf/reports/manual/*-console.log`
+
+Progressive scripts write to:
+
+- `tests/perf/reports/<mode>/<timestamp>/summary-concurrency10.json`
+- `tests/perf/reports/<mode>/<timestamp>/summary-concurrency50.json`
+- `tests/perf/reports/<mode>/<timestamp>/summary-concurrency100.json`
+- `tests/perf/reports/<mode>/<timestamp>/raw-concurrency*.json`
+- `tests/perf/reports/<mode>/<timestamp>/console-concurrency*.log`
 - `tests/perf/reports/<mode>/<timestamp>/summary-table.csv`
 - `tests/perf/reports/<mode>/<timestamp>/summary.md`
 
-Quick pointer to the latest run:
+Quick pointer to latest progressive run:
 
 - `tests/perf/reports/latest-dalle.txt`
 - `tests/perf/reports/latest-google.txt`
@@ -164,7 +145,7 @@ Tracked metrics include:
 - failure rate (`http_req_failed`)
 - checks success rate (`checks`)
 - API success rate (`api_success`)
-- response body contains image URL rate (`api_has_url`)
+- response body contains payload rate (`api_has_url`)
 - items returned per call (`api_items_count`)
 - response payload size (`api_response_bytes`)
 - latency: `avg`, `p90`, `p95`, `max`
@@ -172,9 +153,9 @@ Tracked metrics include:
 ## Examples
 
 ```powershell
-k6 run -e API_BASE_URL=https://your-api.example.com/api -e VUS=100 -e DURATION=1m tests/perf/load-100.js
+k6 run -e MODE=google -e TOTAL_CALLS=1200 -e INTERVAL_SECONDS=0.1 -e CONCURRENCY=20 tests/perf/load-100.js
 ```
 
 ```powershell
-k6 run -e MODE=google -e VUS=100 -e DURATION=3m tests/perf/load-100.js
+k6 run -e MODE=careers -e TOTAL_CALLS=1200 -e INTERVAL_SECONDS=0.5 -e CONCURRENCY=20 tests/perf/load-100.js
 ```

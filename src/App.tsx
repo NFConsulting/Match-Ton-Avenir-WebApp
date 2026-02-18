@@ -3,7 +3,6 @@ import AvatarSection from './components/AvatarSection'
 import CheckboxList from './components/CheckboxList'
 import Emoji from './components/Emoji'
 import JobsSection from './components/JobsSection'
-import PromptPreview from './components/PromptPreview'
 import {
   cognitive,
   developOptions,
@@ -13,14 +12,13 @@ import {
 } from './constants/options'
 import {
   fetchImageUrlsPage,
-  generateImage,
   generateImageGoogle,
-  selectCareers,
   selectCareersGoogle,
 } from './services/imageService'
 import { buildPrompt } from './utils/prompt'
 import type { CachedUrl, PromptInput } from './types'
 
+const MIN_STRENGTHS = 3
 const MAX_STRENGTHS = 5
 const MAX_DEVELOP = 3
 const MAX_INTERESTS = 3
@@ -34,6 +32,171 @@ const CloseIcon = (props: ComponentProps<'svg'>) => (
     <path d="M6.225 4.811 4.811 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586z" />
   </svg>
 )
+
+const GuidanceNotice = () => (
+  <div className="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-5 text-slate-800">
+    <p className="text-lg font-semibold text-slate-900">À savoir</p>
+    <p className="mt-3 text-sm leading-relaxed">
+      Cet outil utilise l&apos;IA pour t&apos;aider à imaginer ton futur et créer ton avatar.
+      Attention : l&apos;IA n&apos;est pas toujours exacte et les métiers ou suggestions qu&apos;elle
+      propose peuvent être inappropriés, incomplets ou peu adaptés à ta situation. Utilise-les
+      uniquement comme source d&apos;inspiration, et vérifie toujours avec des adultes ou des
+      sources fiables.
+    </p>
+    <p className="mt-4 text-sm font-semibold text-slate-900">Comme prochaines étapes :</p>
+    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+      <li>Consulte ONISEP - Découvrir les métiers</li>
+      <li>Parle à tes proches, à ton professeur principal ou à ton conseiller d&apos;orientation</li>
+      <li>Participe à des salons ou journées portes ouvertes pour découvrir les métiers</li>
+    </ul>
+  </div>
+)
+
+const DataPreventionFooter = ({ onOpenMentions }: { onOpenMentions: () => void }) => (
+  <div className="rounded-xl border border-slate-200/80 bg-white/80 px-4 py-3 text-xs leading-relaxed text-slate-600">
+    <p>
+      Dans le cadre de l’évènement Match ton Avenir, le Conseil Départemental des Yvelines
+      utilise les informations que tu renseignes pour créer ton avatar et t’aider à visualiser ton
+      projet d’études ou professionnel.
+    </p>
+    <p className="mt-2">
+      Ces données sont utilisées avec ton consentement, uniquement pour cet objectif, conservées
+      le temps nécessaire puis supprimées.
+    </p>
+    <p className="mt-2">
+      Elles ne sont pas transférées hors de l’Union Européenne et tu peux exercer tes droits à
+      tout moment (accès, correction, suppression, etc.).
+    </p>
+    <p className="mt-2">
+      Pour en savoir plus sur l’utilisation de tes données et tes droits,{' '}
+      <button
+        type="button"
+        className="font-semibold text-brand-600 underline decoration-brand-600/50 underline-offset-2"
+        onClick={onOpenMentions}
+      >
+        clique ici
+      </button>
+      .
+    </p>
+    <p className="mt-2">
+      En cas de question ou si tu estimes que tes droits ne sont pas respectés, tu peux aussi
+      contacter la CNIL (autorité française de protection des données).
+    </p>
+    <div className="mt-3">
+      <button
+        type="button"
+        className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+        onClick={onOpenMentions}
+      >
+        mention
+      </button>
+    </div>
+  </div>
+)
+
+const MentionsModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={onClose}
+    >
+      <div
+        className="relative max-h-[85vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="absolute right-3 top-3 rounded-full bg-slate-100 p-2 text-slate-700 transition hover:bg-slate-200"
+          aria-label="Fermer"
+          onClick={onClose}
+        >
+          <CloseIcon className="h-4 w-4" />
+        </button>
+
+        <p className="text-xl font-bold text-slate-900">Evènement : Match ton Avenir</p>
+        <p className="mt-1 text-lg font-semibold text-slate-900">Qui utilise tes données ?</p>
+        <p className="mt-2 text-sm text-slate-700">
+          Le Conseil Départemental des Yvelines (représenté par son Président, situé au 2, Place
+          André Mignot).
+        </p>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">Pourquoi on utilise tes données ?</p>
+        <p className="mt-2 text-sm text-slate-700">Pour créer ton avatar et t’aider à :</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <li>Mieux imaginer ton futur métier</li>
+          <li>Réfléchir à ton projet d’études</li>
+          <li>Evaluer l’évènement</li>
+        </ul>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">Quelles données ?</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <li>Ton identité (ex : nom, prénom)</li>
+          <li>Des informations liées à ta vie personnelle et ton projet</li>
+        </ul>
+        <p className="mt-2 text-sm text-slate-700">
+          Ces informations sont celles que tu as données toi-même dans le prompt.
+        </p>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">
+          Pourquoi on a le droit de les utiliser ?
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          Parce que tu as donné ton consentement (article 6(1)a du RGPD) et parce que cela nous
+          aide à mesurer l’efficacité et à améliorer les évènements que nous te proposeront par la
+          suite (article 6(1)f).
+        </p>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">Combien de temps on les garde ?</p>
+        <p className="mt-2 text-sm text-slate-700">
+          Uniquement le temps nécessaire pour t’accompagner, puis elles sont supprimées.
+        </p>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">Qui peut les voir ?</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
+          <li>Les services concernés</li>
+          <li>Certains partenaires commerciaux ou institutionnels</li>
+        </ul>
+        <p className="mt-2 text-sm text-slate-700">
+          Aucune décision n’est prise automatiquement par un ordinateur seul.
+          <br />
+          Tes données ne sont pas envoyées hors de l’Union Européenne.
+        </p>
+
+        <p className="mt-5 text-lg font-semibold text-slate-900">Tes droits</p>
+        <p className="mt-2 text-sm text-slate-700">
+          Tu peux : voir tes données, les corriger, demander leur suppression, t’opposer à leur
+          utilisation, demander une copie.
+        </p>
+
+        <p className="mt-5 text-sm text-slate-700">Pour toute question ou pour exercer tes droits :</p>
+        <p className="mt-1 text-sm text-slate-700">Contact DPO : dpo@yvelines.fr</p>
+        <p className="mt-1 text-sm text-slate-700">
+          Courrier : DPO, 2 Place André Mignot 78000 VERSAILLES
+        </p>
+
+        <p className="mt-4 text-sm text-slate-700">
+          Si tu penses que tes droits ne sont pas respectés, tu peux contacter la CNIL (autorité
+          française qui protège les données personnelles).
+        </p>
+        <p className="mt-2 text-sm text-slate-700">
+          Plus d’infos sur :{' '}
+          <a
+            href="https://www.cnil.fr"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-brand-600 underline decoration-brand-600/50 underline-offset-2"
+          >
+            cnil.fr
+          </a>
+        </p>
+      </div>
+    </div>
+  )
+}
 
 const containerBase = 'relative mx-auto w-full px-4 sm:px-6 lg:px-8'
 const containerMd = `${containerBase} max-w-5xl`
@@ -51,8 +214,6 @@ const chipClass =
   'inline-flex w-fit items-center rounded-full bg-brand-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white'
 const countChipClass =
   'inline-flex items-center rounded-full bg-brand-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-900'
-const careersSpotlightClass =
-  'rounded-3xl border-2 border-brand-500/35 bg-[linear-gradient(140deg,rgb(var(--brand-500)/0.18),rgba(255,255,255,0.98))] px-6 py-6 shadow-[0_22px_50px_rgba(211,8,116,0.22)]'
 const careersPillClass =
   'inline-flex min-h-[3rem] items-center rounded-2xl border border-brand-500/25 bg-white px-4 py-2 text-base font-semibold text-slate-900 shadow-[0_8px_18px_rgba(0,0,0,0.08)] sm:text-lg'
 
@@ -126,7 +287,6 @@ function App() {
   const [chosenStyles, setChosenStyles] = useState<Record<string, boolean>>({})
   const [avatarTeint, setAvatarTeint] = useState('')
   const [avatarWords, setAvatarWords] = useState<string[]>(['', '', ''])
-  const [generatedPrompt, setGeneratedPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [imageId, setImageId] = useState<string | undefined>()
   const [suggestedCareers, setSuggestedCareers] = useState<string[]>([])
@@ -144,6 +304,7 @@ function App() {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const [singleImageUrl, setSingleImageUrl] = useState<string | null>(null)
   const [singleImageError, setSingleImageError] = useState<string | null>(null)
+  const [showMentionsModal, setShowMentionsModal] = useState(false)
   const [showValidation, setShowValidation] = useState(false)
   const [portfolioAfterId, setPortfolioAfterId] = useState(0)
   const [portfolioHasMore, setPortfolioHasMore] = useState(true)
@@ -233,11 +394,9 @@ function App() {
     }
   }, [strengthsSelected, developSelected])
 
-  const hasCognitive = counts.cognitive > 0
-  const hasEmotional = counts.emotional > 0
-  const hasSocial = counts.social > 0
   const strengthSelectionCount = counts.cognitive + counts.emotional + counts.social
-  const hasStrengthAnswers = hasCognitive && hasEmotional && hasSocial
+  const hasStrengthAnswers =
+    strengthSelectionCount >= MIN_STRENGTHS && strengthSelectionCount <= MAX_STRENGTHS
   const hasDevelopAnswers = counts.develop > 0
   const hasInterestAnswers = counts.interests > 0
   const hasJobAnswer = jobs.some((job) => job.trim().length > 0) || exploring
@@ -255,6 +414,7 @@ function App() {
     hasAvatarTeint &&
     hasAvatarStyle
   const careersToDisplay = suggestedCareers.slice(0, 3)
+  const selectedStrengthsFromStart = strengthLabels.filter((label) => strengthsSelected[label])
 
   const isStepValid = (stepId: string) => {
     switch (stepId) {
@@ -274,7 +434,8 @@ function App() {
   }
 
   const validationMessage: Record<string, string> = {
-    strengths: 'Choisis au moins 1 compétence dans chaque catégorie : cognitive, émotionnelle et sociale.',
+    strengths:
+      'Choisis entre 3 et 5 compétences parmi les compétences cognitives, émotionnelles et sociales.',
     develop: 'Sélectionne au moins une compétence à développer.',
     interests: 'Choisis au moins un centre d’intérêt.',
     jobs: 'Renseigne un métier ou coche “Je suis encore en exploration”.',
@@ -362,7 +523,7 @@ function App() {
       suggestedCareers: string[]
       enrichedPrompt: string
       isFallback: boolean
-    }> = selectCareers,
+    }> = selectCareersGoogle,
     generator: (
       p: string,
       suggestedCareers?: string[]
@@ -371,7 +532,7 @@ function App() {
       revisedPrompt?: string | null
       id?: string
       suggestedCareers?: string[] | null
-    }> = generateImage
+    }> = generateImageGoogle
   ) => {
     setImageUrl('')
     setImageId(undefined)
@@ -394,7 +555,6 @@ function App() {
 
       setSuggestedCareers(careers)
       setCareersIsFallback(Boolean(careersData.isFallback))
-      setGeneratedPrompt(enrichedPrompt)
 
       const data = await generator(enrichedPrompt, careers)
 
@@ -423,18 +583,7 @@ function App() {
 
   const handleGenerate = async () => {
     const prompt = buildPrompt(buildPromptInput())
-    setGeneratedPrompt(prompt)
-    await submitPrompt(prompt, selectCareers, generateImage)
-  }
-
-  const handleGenerateGoogle = async () => {
-    const prompt = buildPrompt(buildPromptInput())
-    setGeneratedPrompt(prompt)
-    await submitPrompt(prompt, selectCareersGoogle, generateImageGoogle)
-  }
-
-  const handleSendEditedPrompt = async () => {
-    await submitPrompt(generatedPrompt, selectCareers, generateImage)
+    await submitPrompt(prompt)
   }
 
   const loadPortfolioPage = useCallback(
@@ -546,7 +695,7 @@ function App() {
               1. <Emoji symbol="🏅" /> CE QUE J’AI MONTRÉ PENDANT LE SPORT
             </p>
             <p className="mt-2 text-sm text-slate-600">
-              Choisis 3 à 5 compétences que tu as le plus montrées
+              Choisis 3 à 5 compétences parmi les compétences cognitives, émotionnelles et sociales
             </p>
             <div className="mt-5 space-y-6">
               <div>
@@ -732,77 +881,6 @@ function App() {
           </div>
         ),
       },
-      {
-        id: 'preview',
-        label: (
-          <>
-            <Emoji symbol="🎨" /> Prévisualisation & génération
-          </>
-        ),
-        content: (
-          <div className="space-y-4">
-            <PromptPreview
-              prompt={generatedPrompt}
-              onChange={setGeneratedPrompt}
-              onSend={handleSendEditedPrompt}
-              loading={loading}
-            />
-            {careersToDisplay.length > 0 && (
-              <div className={careersSpotlightClass}>
-                <div className="inline-flex rounded-full bg-brand-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-                  A ne pas louper
-                </div>
-                <p className="mt-3 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                  <Emoji symbol="🧭" /> Métiers conseillés
-                </p>
-                <p className="mt-1 text-sm text-slate-700 sm:text-base">
-                  Les 3 pistes les plus pertinentes pour ton profil
-                </p>
-                <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                  {careersToDisplay.map((career, index) => (
-                    <span
-                      key={`${career}-${index}`}
-                      className={careersPillClass}
-                    >
-                      <span className="mr-2 text-brand-600">{index + 1}.</span>
-                      {career}
-                    </span>
-                  ))}
-                </div>
-                {careersIsFallback !== null && (
-                  <p className="mt-3 text-xs font-medium text-slate-600">
-                    {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
-                  </p>
-                )}
-              </div>
-            )}
-            {imageUrl && (
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_14px_40px_rgba(0,0,0,0.12)]">
-                <img src={imageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
-                <div className="space-y-1 px-5 py-4">
-                  <p className="text-lg font-semibold text-slate-900">
-                    <Emoji symbol="🖼️" /> Image renvoyée par l’API
-                  </p>
-                  {imageId && (
-                    <p className="text-sm text-slate-600">
-                      ID : {imageId}
-                    </p>
-                  )}
-                  <div className="pt-2">
-                    <button
-                      type="button"
-                      className={buttonOutline}
-                      onClick={() => void handleDownloadImage(imageUrl, imageId)}
-                    >
-                      <Emoji symbol="⬇️" /> Télécharger l&apos;image
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ),
-      },
     ],
     [
       avatarExpression,
@@ -819,13 +897,13 @@ function App() {
       careersIsFallback,
       careersToDisplay,
       exploring,
-      generatedPrompt,
       handleDownloadImage,
       hair,
       imageId,
       imageUrl,
       jobs,
       loading,
+      selectedStrengthsFromStart,
       strengthsSelected,
       developSelected,
     ]
@@ -846,7 +924,6 @@ function App() {
     setChosenStyles({})
     setAvatarTeint('')
     setAvatarWords(['', '', ''])
-    setGeneratedPrompt('')
     setImageUrl('')
     setImageId(undefined)
     setSuggestedCareers([])
@@ -862,6 +939,7 @@ function App() {
     setLightboxUrl(null)
     setSingleImageUrl(null)
     setSingleImageError(null)
+    setShowMentionsModal(false)
     resetFormState()
   }
 
@@ -967,61 +1045,92 @@ function App() {
         <section className={heroClass}>
           <span className={chipClass}>Match ton Avenir</span>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            <Emoji symbol="🖼️" /> Aperçu de l’image
+            <Emoji symbol="📸" /> Aperçu de l’image
           </h1>
           <div className="flex flex-wrap gap-3 pt-1">
             <button className={buttonPrimary} onClick={goToGenerator}>
-              <Emoji symbol="↩️" /> Revenir au générateur
+              Revenir au générateur
             </button>
-            {singleImageUrl && (
-              <button
-                type="button"
-                className={buttonOutline}
-                onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
-              >
-                <Emoji symbol="⬇️" /> Télécharger l&apos;image
-              </button>
-            )}
           </div>
         </section>
 
         <section className={panelClass}>
-          {careersToDisplay.length > 0 && (
-            <div className={`mb-5 ${careersSpotlightClass}`}>
-              <div className="inline-flex rounded-full bg-brand-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-                A ne pas louper
-              </div>
-              <p className="mt-3 text-xl font-extrabold tracking-tight text-slate-900 sm:text-2xl">
-                <Emoji symbol="🧭" /> Métiers conseillés
-              </p>
-              <p className="mt-1 text-sm text-slate-700 sm:text-base">
-                Les 3 pistes les plus pertinentes pour ton profil
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {careersToDisplay.map((career, index) => (
-                  <span
-                    key={`${career}-${index}`}
-                    className={careersPillClass}
-                  >
-                    <span className="mr-2 text-brand-600">{index + 1}.</span>
-                    {career}
-                  </span>
-                ))}
-              </div>
-              {careersIsFallback !== null && (
-                <p className="mt-3 text-xs font-medium text-slate-600">
-                  {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
-                </p>
-              )}
-            </div>
-          )}
           {!singleImageUrl && !singleImageError && spinner}
+          {singleImageError && (
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {singleImageError}
+            </p>
+          )}
           {singleImageUrl && (
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-              <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+            <div className="space-y-4">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+                <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className={sectionBlockClass}>
+                  <p className="text-lg font-semibold text-slate-900">
+                    <Emoji symbol="🏅" /> Compétences sélectionnées
+                  </p>
+                  {selectedStrengthsFromStart.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedStrengthsFromStart.map((skill, index) => (
+                        <span
+                          key={`${skill}-${index}`}
+                          className="inline-flex items-center rounded-full border border-slate-200/80 bg-white px-3 py-1 text-sm font-semibold text-slate-900"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-600">Aucune compétence sélectionnée.</p>
+                  )}
+                </div>
+                <div className={sectionBlockClass}>
+                  <p className="text-lg font-semibold text-slate-900">
+                    <Emoji symbol="🧭" /> Métiers retournés par l’intelligence artificielle
+                  </p>
+                  {careersToDisplay.length > 0 ? (
+                    <div className="mt-3 grid gap-2">
+                      {careersToDisplay.map((career, index) => (
+                        <span
+                          key={`${career}-${index}`}
+                          className={careersPillClass}
+                        >
+                          <span className="mr-2 text-brand-600">{index + 1}.</span>
+                          {career}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-600">Aucun métier retourné pour le moment.</p>
+                  )}
+                  {careersIsFallback !== null && (
+                    <p className="mt-3 text-xs font-medium text-slate-600">
+                      {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="pt-1">
+                <button
+                  type="button"
+                  className={buttonOutline}
+                  onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
+                >
+                  Télécharger l&apos;image
+                </button>
+              </div>
+              <GuidanceNotice />
             </div>
           )}
         </section>
+
+        <section className="pb-2">
+          <DataPreventionFooter onOpenMentions={() => setShowMentionsModal(true)} />
+        </section>
+
+        <MentionsModal open={showMentionsModal} onClose={() => setShowMentionsModal(false)} />
       </main>
     )
   }
@@ -1175,22 +1284,13 @@ function App() {
                 </p>
               )}
               {isLastStep ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    className={buttonPrimaryLarge}
-                    onClick={handleGenerate}
-                    disabled={loading}
-                  >
-                    <Emoji symbol="🎯" /> Générer mon avatar (DALL·E)
-                  </button>
-                  <button
-                    className={buttonOutline}
-                    onClick={handleGenerateGoogle}
-                    disabled={loading}
-                  >
-                    <Emoji symbol="✨" /> Générer avec Google
-                  </button>
-                </div>
+                <button
+                  className={buttonPrimaryLarge}
+                  onClick={handleGenerate}
+                  disabled={loading}
+                >
+                  <Emoji symbol="✨" /> Générer mon avatar
+                </button>
               ) : (
                 <button className={buttonPrimary} onClick={handleNext}>
                   Étape suivante
