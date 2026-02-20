@@ -310,9 +310,10 @@ function App() {
   const [portfolioHasMore, setPortfolioHasMore] = useState(true)
   const [portfolioLoadingMore, setPortfolioLoadingMore] = useState(false)
   const [snapshotDownloading, setSnapshotDownloading] = useState(false)
+  const [snapshotDownloadError, setSnapshotDownloadError] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
-  const snapshotSectionRef = useRef<HTMLDivElement | null>(null)
+  const snapshotPageRef = useRef<HTMLElement | null>(null)
 
   const toggleStrength = (label: string) =>
     setStrengthsSelected((prev) => {
@@ -491,6 +492,7 @@ function App() {
       const url = String(targetUrl ?? '').trim()
       if (!url) return
 
+      setSnapshotDownloadError(null)
       const filename = buildImageFilename(candidateId)
 
       const clickDownloadLink = (href: string, openInNewTab = false) => {
@@ -852,17 +854,10 @@ function App() {
           return
         }
 
-        const response = await fetch(url)
-        if (!response.ok) {
-          throw new Error('download_failed')
-        }
-
-        const blob = await response.blob()
-        const blobUrl = URL.createObjectURL(blob)
-        clickDownloadLink(blobUrl)
-        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
-      } catch {
-        clickDownloadLink(url, true)
+        throw new Error('snapshot_failed')
+      } catch (error) {
+        setSnapshotDownloadError('Impossible de télécharger la capture complète de la page.')
+        console.error('[download] capture échouée:', error)
       } finally {
         setSnapshotDownloading(false)
       }
@@ -1389,7 +1384,7 @@ function App() {
 
   if (route.view === 'single' && route.imageId) {
     return (
-      <main className={`${containerMd} ${appShell}`}>
+      <main className={`${containerMd} ${appShell}`} ref={snapshotPageRef}>
         <div className="pointer-events-none absolute right-[-120px] top-[-60px] h-[320px] w-[320px] rounded-full bg-[rgb(var(--brand-500)/0.28)] blur-[48px] opacity-70" aria-hidden />
         <div className="pointer-events-none absolute bottom-[-80px] left-[-100px] h-[280px] w-[280px] rounded-full bg-[rgba(151,151,151,0.22)] blur-[48px] opacity-70" aria-hidden />
 
@@ -1408,14 +1403,14 @@ function App() {
             </p>
           )}
           {singleImageUrl && (
-            <div className="space-y-4" ref={snapshotSectionRef}>
+            <div className="space-y-4">
               <div className="space-y-4">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
                   <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className={sectionBlockClass}>
-                    <p className="text-lg font-semibold text-slate-900">
+                    <p className="text-xl font-semibold text-slate-900 sm:text-2xl">
                       <Emoji symbol="🏅" /> Compétences sélectionnées
                     </p>
                     {selectedStrengthsFromStart.length > 0 ? (
@@ -1423,14 +1418,14 @@ function App() {
                         {selectedStrengthsFromStart.map((skill, index) => (
                           <span
                             key={`${skill}-${index}`}
-                            className="inline-flex items-center rounded-full border border-slate-200/80 bg-white px-3 py-1 text-sm font-semibold text-slate-900"
+                            className="inline-flex items-center rounded-full border border-slate-200/80 bg-white px-4 py-1.5 text-base font-semibold text-slate-900 sm:text-lg"
                           >
                             {skill}
                           </span>
                         ))}
                       </div>
                     ) : (
-                      <p className="mt-2 text-sm text-slate-600">Aucune compétence sélectionnée.</p>
+                      <p className="mt-2 text-base text-slate-600">Aucune compétence sélectionnée.</p>
                     )}
                   </div>
                   <div className={sectionBlockClass}>
@@ -1471,21 +1466,24 @@ function App() {
             <div className="flex flex-col gap-3">
               <button
                 type="button"
+                className={`${buttonPrimary} w-full px-5 py-3 text-base`}
+                onClick={() => void handleDownloadImage(singleImageUrl, route.imageId, snapshotPageRef.current)}
+                disabled={snapshotDownloading}
+              >
+                {snapshotDownloading ? 'Téléchargement...' : "Télécharger l'image"}
+              </button>
+              <button
+                type="button"
                 className={`${buttonOutline} w-full px-5 py-3 text-base`}
                 onClick={goToGenerator}
               >
                 Revenir au générateur
               </button>
-              <button
-                type="button"
-                className={`${buttonPrimary} w-full px-5 py-3 text-base`}
-                onClick={() =>
-                  void handleDownloadImage(singleImageUrl, route.imageId, snapshotSectionRef.current)
-                }
-                disabled={snapshotDownloading}
-              >
-                {snapshotDownloading ? 'Téléchargement...' : "Télécharger l'image"}
-              </button>
+              {snapshotDownloadError && (
+                <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {snapshotDownloadError}
+                </p>
+              )}
             </div>
           )}
         </section>
