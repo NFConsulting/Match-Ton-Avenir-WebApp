@@ -15,8 +15,8 @@ import {
   generateImageGoogle,
   selectCareersGoogle,
 } from './services/imageService'
-import { buildPrompt } from './utils/prompt'
-import type { CachedUrl, PromptInput } from './types'
+import { buildCareersPayload, buildPrompt } from './utils/prompt'
+import type { CachedUrl, CareersRequest, PromptInput } from './types'
 
 const MIN_STRENGTHS = 3
 const MAX_STRENGTHS = 5
@@ -45,7 +45,16 @@ const GuidanceNotice = () => (
     </p>
     <p className="mt-4 text-sm font-semibold text-slate-900">Comme prochaines étapes :</p>
     <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
-      <li>Consulte ONISEP - Découvrir les métiers</li>
+      <li>
+        <a
+          href="https://www.onisep.fr/recherche?context=metier"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-semibold text-brand-600 underline decoration-brand-600/50 underline-offset-2"
+        >
+          Consulte ONISEP - Découvrir les métiers
+        </a>
+      </li>
       <li>Parle à tes proches, à ton professeur principal ou à ton conseiller d&apos;orientation</li>
       <li>Participe à des salons ou journées portes ouvertes pour découvrir les métiers</li>
     </ul>
@@ -82,15 +91,6 @@ const DataPreventionFooter = ({ onOpenMentions }: { onOpenMentions: () => void }
       En cas de question ou si tu estimes que tes droits ne sont pas respectés, tu peux aussi
       contacter la CNIL (autorité française de protection des données).
     </p>
-    <div className="mt-3">
-      <button
-        type="button"
-        className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-        onClick={onOpenMentions}
-      >
-        mention
-      </button>
-    </div>
   </div>
 )
 
@@ -309,8 +309,10 @@ function App() {
   const [portfolioAfterId, setPortfolioAfterId] = useState(0)
   const [portfolioHasMore, setPortfolioHasMore] = useState(true)
   const [portfolioLoadingMore, setPortfolioLoadingMore] = useState(false)
+  const [snapshotDownloading, setSnapshotDownloading] = useState(false)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
+  const snapshotSectionRef = useRef<HTMLDivElement | null>(null)
 
   const toggleStrength = (label: string) =>
     setStrengthsSelected((prev) => {
@@ -481,7 +483,11 @@ function App() {
   }
 
   const handleDownloadImage = useCallback(
-    async (targetUrl: string | null | undefined, candidateId?: string | number | null) => {
+    async (
+      targetUrl: string | null | undefined,
+      candidateId?: string | number | null,
+      sectionToCapture?: HTMLElement | null
+    ) => {
       const url = String(targetUrl ?? '').trim()
       if (!url) return
 
@@ -500,7 +506,131 @@ function App() {
         link.remove()
       }
 
+      const blobToDataUrl = async (blob: Blob): Promise<string> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result)
+              return
+            }
+            reject(new Error('data_url_failed'))
+          }
+          reader.onerror = () => reject(new Error('data_url_failed'))
+          reader.readAsDataURL(blob)
+        })
+
+      const copyComputedStyles = (source: Element, target: Element) => {
+        const sourceStyle = window.getComputedStyle(source as HTMLElement)
+        const targetStyle = (target as HTMLElement).style
+        for (const property of Array.from(sourceStyle)) {
+          targetStyle.setProperty(
+            property,
+            sourceStyle.getPropertyValue(property),
+            sourceStyle.getPropertyPriority(property)
+          )
+        }
+
+        const sourceChildren = Array.from(source.children)
+        const targetChildren = Array.from(target.children)
+        for (let i = 0; i < sourceChildren.length; i += 1) {
+          if (targetChildren[i]) {
+            copyComputedStyles(sourceChildren[i], targetChildren[i])
+          }
+        }
+      }
+
+      const tryDownloadSectionSnapshot = async () => {
+        if (!sectionToCapture) return false
+
+        const width = Math.max(1, Math.ceil(sectionToCapture.scrollWidth))
+        const height = Math.max(1, Math.ceil(sectionToCapture.scrollHeight))
+        const clone = sectionToCapture.cloneNode(true) as HTMLElement
+
+        copyComputedStyles(sectionToCapture, clone)
+        clone.style.margin = '0'
+        clone.style.width = `${width}px`
+        clone.style.height = `${height}px`
+        clone.style.boxSizing = 'border-box'
+        clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml')
+
+        const sourceImages = Array.from(sectionToCapture.querySelectorAll('img'))
+        const clonedImages = Array.from(clone.querySelectorAll('img'))
+
+        for (let i = 0; i < sourceImages.length; i += 1) {
+          const sourceImage = sourceImages[i]
+          const cloneImage = clonedImages[i]
+          if (!cloneImage) continue
+
+          const imageSrc = sourceImage.currentSrc || sourceImage.getAttribute('src') || ''
+          if (!imageSrc) continue
+
+          try {
+            const imageResponse = await fetch(imageSrc)
+            if (!imageResponse.ok) continue
+            const imageBlob = await imageResponse.blob()
+            const dataUrl = await blobToDataUrl(imageBlob)
+            cloneImage.setAttribute('src', dataUrl)
+          } catch {
+            // keep original src if conversion fails
+          }
+        }
+
+        const serializedNode = new XMLSerializer().serializeToString(clone)
+        const svgString =
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+          `<foreignObject width="100%" height="100%">${serializedNode}</foreignObject>` +
+          '</svg>'
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+        const svgUrl = URL.createObjectURL(svgBlob)
+
+        try {
+          const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image()
+            img.decoding = 'async'
+            img.onload = () => resolve(img)
+            img.onerror = () => reject(new Error('snapshot_load_failed'))
+            img.src = svgUrl
+          })
+
+          const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1))
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.round(width * scale)
+          canvas.height = Math.round(height * scale)
+          const context = canvas.getContext('2d')
+          if (!context) {
+            throw new Error('canvas_context_unavailable')
+          }
+          context.scale(scale, scale)
+          context.fillStyle = '#ffffff'
+          context.fillRect(0, 0, width, height)
+          context.drawImage(image, 0, 0, width, height)
+
+          const pngBlob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob)
+                return
+              }
+              reject(new Error('snapshot_blob_failed'))
+            }, 'image/png')
+          })
+          const blobUrl = URL.createObjectURL(pngBlob)
+          clickDownloadLink(blobUrl)
+          window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
+          return true
+        } finally {
+          URL.revokeObjectURL(svgUrl)
+        }
+      }
+
+      setSnapshotDownloading(true)
       try {
+        const snapshotDownloaded = await tryDownloadSectionSnapshot()
+        if (snapshotDownloaded) {
+          return
+        }
+
         const response = await fetch(url)
         if (!response.ok) {
           throw new Error('download_failed')
@@ -512,6 +642,8 @@ function App() {
         window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
       } catch {
         clickDownloadLink(url, true)
+      } finally {
+        setSnapshotDownloading(false)
       }
     },
     []
@@ -519,11 +651,8 @@ function App() {
 
   const submitPrompt = async (
     prompt: string,
-    careersSelector: (p: string) => Promise<{
-      suggestedCareers: string[]
-      enrichedPrompt: string
-      isFallback: boolean
-    }> = selectCareersGoogle,
+    careersPayload: CareersRequest,
+    careersSelector: (payload: CareersRequest) => Promise<string[]> = selectCareersGoogle,
     generator: (
       p: string,
       suggestedCareers?: string[]
@@ -547,16 +676,15 @@ function App() {
 
     setLoading(true)
     try {
-      const careersData = await careersSelector(cleanedPrompt)
-      const careers = Array.isArray(careersData.suggestedCareers)
-        ? careersData.suggestedCareers.filter((career) => typeof career === 'string')
+      const careersData = await careersSelector(careersPayload)
+      const careers = Array.isArray(careersData)
+        ? careersData.filter((career) => typeof career === 'string')
         : []
-      const enrichedPrompt = (careersData.enrichedPrompt || cleanedPrompt).trim()
 
       setSuggestedCareers(careers)
-      setCareersIsFallback(Boolean(careersData.isFallback))
+      setCareersIsFallback(null)
 
-      const data = await generator(enrichedPrompt, careers)
+      const data = await generator(cleanedPrompt, careers)
 
       const finalCareers = Array.isArray(data.suggestedCareers)
         ? data.suggestedCareers.filter((career) => typeof career === 'string')
@@ -582,8 +710,10 @@ function App() {
   }
 
   const handleGenerate = async () => {
-    const prompt = buildPrompt(buildPromptInput())
-    await submitPrompt(prompt)
+    const promptInput = buildPromptInput()
+    const prompt = buildPrompt(promptInput)
+    const careersPayload = buildCareersPayload(promptInput)
+    await submitPrompt(prompt, careersPayload)
   }
 
   const loadPortfolioPage = useCallback(
@@ -1047,11 +1177,6 @@ function App() {
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
             <Emoji symbol="📸" /> Aperçu de l’image
           </h1>
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button className={buttonPrimary} onClick={goToGenerator}>
-              Revenir au générateur
-            </button>
-          </div>
         </section>
 
         <section className={panelClass}>
@@ -1063,71 +1188,81 @@ function App() {
           )}
           {singleImageUrl && (
             <div className="space-y-4">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-                <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className={sectionBlockClass}>
-                  <p className="text-lg font-semibold text-slate-900">
-                    <Emoji symbol="🏅" /> Compétences sélectionnées
-                  </p>
-                  {selectedStrengthsFromStart.length > 0 ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {selectedStrengthsFromStart.map((skill, index) => (
-                        <span
-                          key={`${skill}-${index}`}
-                          className="inline-flex items-center rounded-full border border-slate-200/80 bg-white px-3 py-1 text-sm font-semibold text-slate-900"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-600">Aucune compétence sélectionnée.</p>
-                  )}
+              <div className="space-y-4" ref={snapshotSectionRef}>
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+                  <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 </div>
-                <div className={sectionBlockClass}>
-                  <p className="text-lg font-semibold text-slate-900">
-                    <Emoji symbol="🧭" /> Métiers retournés par l’intelligence artificielle
-                  </p>
-                  {careersToDisplay.length > 0 ? (
-                    <div className="mt-3 grid gap-2">
-                      {careersToDisplay.map((career, index) => (
-                        <span
-                          key={`${career}-${index}`}
-                          className={careersPillClass}
-                        >
-                          <span className="mr-2 text-brand-600">{index + 1}.</span>
-                          {career}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-600">Aucun métier retourné pour le moment.</p>
-                  )}
-                  {careersIsFallback !== null && (
-                    <p className="mt-3 text-xs font-medium text-slate-600">
-                      {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className={sectionBlockClass}>
+                    <p className="text-lg font-semibold text-slate-900">
+                      <Emoji symbol="🏅" /> Compétences sélectionnées
                     </p>
-                  )}
+                    {selectedStrengthsFromStart.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedStrengthsFromStart.map((skill, index) => (
+                          <span
+                            key={`${skill}-${index}`}
+                            className="inline-flex items-center rounded-full border border-slate-200/80 bg-white px-3 py-1 text-sm font-semibold text-slate-900"
+                          >
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-600">Aucune compétence sélectionnée.</p>
+                    )}
+                  </div>
+                  <div className={sectionBlockClass}>
+                    <p className="text-lg font-semibold text-slate-900">
+                      <Emoji symbol="🧭" /> Métiers retournés par l’intelligence artificielle
+                    </p>
+                    {careersToDisplay.length > 0 ? (
+                      <div className="mt-3 grid gap-2">
+                        {careersToDisplay.map((career, index) => (
+                          <span
+                            key={`${career}-${index}`}
+                            className={careersPillClass}
+                          >
+                            <span className="mr-2 text-brand-600">{index + 1}.</span>
+                            {career}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-sm text-slate-600">Aucun métier retourné pour le moment.</p>
+                    )}
+                    {careersIsFallback !== null && (
+                      <p className="mt-3 text-xs font-medium text-slate-600">
+                        {careersIsFallback ? 'Sélection métiers : mode fallback' : 'Sélection métiers : IA'}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="pt-1">
-                <button
-                  type="button"
-                  className={buttonOutline}
-                  onClick={() => void handleDownloadImage(singleImageUrl, route.imageId)}
-                >
-                  Télécharger l&apos;image
-                </button>
               </div>
               <GuidanceNotice />
             </div>
           )}
         </section>
 
-        <section className="pb-2">
+        <section className="space-y-4 pb-2">
           <DataPreventionFooter onOpenMentions={() => setShowMentionsModal(true)} />
+          {singleImageUrl && (
+            <div className="flex flex-wrap gap-3">
+              <button type="button" className={buttonOutline} onClick={goToGenerator}>
+                Revenir au générateur
+              </button>
+              <button
+                type="button"
+                className={buttonPrimary}
+                onClick={() =>
+                  void handleDownloadImage(singleImageUrl, route.imageId, snapshotSectionRef.current)
+                }
+                disabled={snapshotDownloading}
+              >
+                {snapshotDownloading ? 'Téléchargement...' : "Télécharger l'image"}
+              </button>
+            </div>
+          )}
         </section>
 
         <MentionsModal open={showMentionsModal} onClose={() => setShowMentionsModal(false)} />

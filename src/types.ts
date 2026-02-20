@@ -7,11 +7,12 @@ export type ImageResponse = {
   suggestedCareers?: string[] | null
 }
 
-export type CareersResponse = {
-  suggestedCareers: string[]
-  enrichedPrompt: string
-  isFallback: boolean
+export type CareersRequest = {
+  metiers: string[]
+  centresInteret: string[]
 }
+
+export type CareersResponse = string[]
 
 export type CachedUrl = {
   id: string

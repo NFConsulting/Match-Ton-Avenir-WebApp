@@ -1,11 +1,11 @@
-﻿import type { CachedUrl, CareersResponse, ImageResponse } from '../types'
+﻿import type { CachedUrl, CareersRequest, CareersResponse, ImageResponse } from '../types'
 
 const BASE_API_URL =
   import.meta.env.VITE_API_URL ??
   'https://matchtonavenir-api-bxd2h0dnd3h9d2de.francecentral-01.azurewebsites.net/api'
 
 const GOOGLE_API_URL = `${BASE_API_URL}/image/google`
-const GOOGLE_CAREERS_API_URL = `${BASE_API_URL}/image/google/careers`
+const CAREERS_API_URL = `${BASE_API_URL}/Image/carrer`
 const DEFAULT_URLS_PAGE_SIZE = 12
 const MAX_FULL_FETCH_PAGES = 500
 
@@ -51,36 +51,66 @@ const extractImageId = (url: string): string | undefined => {
   return match?.[1]
 }
 
+const extractErrorTextFromUnknown = (data: unknown): string | null => {
+  if (typeof data === 'string' && data.trim().length > 0) {
+    return data.trim()
+  }
+
+  if (data && typeof data === 'object') {
+    const asRecord = data as Record<string, unknown>
+    const candidates = ['message', 'error', 'detail', 'title']
+    for (const key of candidates) {
+      const value = asRecord[key]
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim()
+      }
+    }
+  }
+
+  return null
+}
+
 const getErrorMessage = async (response: Response): Promise<string> => {
   try {
-    const text = (await response.text()).trim()
-    if (text) return text
+    const raw = (await response.text()).trim()
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw) as unknown
+        return extractErrorTextFromUnknown(parsed) ?? raw
+      } catch {
+        return raw
+      }
+    }
   } catch {
     // ignore parse failures and fallback to status code
   }
   return `Requete echouee (${response.status})`
 }
 
-const callCareersApi = async (url: string, prompt: string): Promise<CareersResponse> => {
+const normalizeCareers = (data: unknown): CareersResponse => {
+  if (!Array.isArray(data)) {
+    return []
+  }
+
+  return data
+    .filter((career): career is string => typeof career === 'string')
+    .map((career) => career.trim())
+    .filter(Boolean)
+}
+
+const callCareersApi = async (url: string, payload: CareersRequest): Promise<CareersResponse> => {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify(payload),
   })
 
   if (!response.ok) {
     throw new Error(await getErrorMessage(response))
   }
 
-  const data = (await response.json()) as CareersResponse
-
-  return {
-    suggestedCareers: Array.isArray(data.suggestedCareers)
-      ? data.suggestedCareers.filter((career) => typeof career === 'string')
-      : [],
-    enrichedPrompt: typeof data.enrichedPrompt === 'string' ? data.enrichedPrompt : prompt,
-    isFallback: Boolean(data.isFallback),
-  }
+  const data = (await response.json()) as unknown
+  return normalizeCareers(data)
 }
 
 const callImageApi = async (
@@ -176,8 +206,8 @@ const extractHasMore = (data: ImageUrlsApiShape): boolean | undefined => {
   return undefined
 }
 
-export const selectCareersGoogle = async (prompt: string): Promise<CareersResponse> =>
-  callCareersApi(GOOGLE_CAREERS_API_URL, prompt)
+export const selectCareersGoogle = async (payload: CareersRequest): Promise<CareersResponse> =>
+  callCareersApi(CAREERS_API_URL, payload)
 
 export const generateImageGoogle = async (
   prompt: string,
@@ -261,4 +291,3 @@ export const fetchImageUrls = async (): Promise<CachedUrl[]> => {
 
   return allUrls
 }
-
