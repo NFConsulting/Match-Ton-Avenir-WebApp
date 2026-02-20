@@ -543,86 +543,95 @@ function App() {
       }
 
       const tryDownloadSectionSnapshot = async () => {
-        if (!sectionToCapture) return false
+        try {
+          if (!sectionToCapture) return false
 
-        const width = Math.max(1, Math.ceil(sectionToCapture.scrollWidth))
-        const height = Math.max(1, Math.ceil(sectionToCapture.scrollHeight))
-        const clone = sectionToCapture.cloneNode(true) as HTMLElement
+          const width = Math.max(1, Math.ceil(sectionToCapture.scrollWidth))
+          const height = Math.max(1, Math.ceil(sectionToCapture.scrollHeight))
+          const clone = sectionToCapture.cloneNode(true) as HTMLElement
 
-        copyComputedStyles(sectionToCapture, clone)
-        clone.style.margin = '0'
-        clone.style.width = `${width}px`
-        clone.style.height = `${height}px`
-        clone.style.boxSizing = 'border-box'
-        clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml')
+          copyComputedStyles(sectionToCapture, clone)
+          clone.style.margin = '0'
+          clone.style.width = `${width}px`
+          clone.style.height = `${height}px`
+          clone.style.boxSizing = 'border-box'
+          clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml')
 
-        const sourceImages = Array.from(sectionToCapture.querySelectorAll('img'))
-        const clonedImages = Array.from(clone.querySelectorAll('img'))
+          const sourceImages = Array.from(sectionToCapture.querySelectorAll('img'))
+          const clonedImages = Array.from(clone.querySelectorAll('img'))
 
-        for (let i = 0; i < sourceImages.length; i += 1) {
-          const sourceImage = sourceImages[i]
-          const cloneImage = clonedImages[i]
-          if (!cloneImage) continue
+          for (let i = 0; i < sourceImages.length; i += 1) {
+            const sourceImage = sourceImages[i]
+            const cloneImage = clonedImages[i]
+            if (!cloneImage) continue
 
-          const imageSrc = sourceImage.currentSrc || sourceImage.getAttribute('src') || ''
-          if (!imageSrc) continue
+            const imageSrc = sourceImage.currentSrc || sourceImage.getAttribute('src') || ''
+            if (!imageSrc) continue
+
+            try {
+              const imageResponse = await fetch(imageSrc)
+              if (!imageResponse.ok) continue
+              const imageBlob = await imageResponse.blob()
+              const dataUrl = await blobToDataUrl(imageBlob)
+              cloneImage.setAttribute('src', dataUrl)
+            } catch {
+              // keep original src if conversion fails
+            }
+          }
+
+          const serializedNode = new XMLSerializer().serializeToString(clone)
+          const svgString =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+            `<foreignObject width="100%" height="100%">${serializedNode}</foreignObject>` +
+            '</svg>'
+          const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+          const svgUrl = URL.createObjectURL(svgBlob)
 
           try {
-            const imageResponse = await fetch(imageSrc)
-            if (!imageResponse.ok) continue
-            const imageBlob = await imageResponse.blob()
-            const dataUrl = await blobToDataUrl(imageBlob)
-            cloneImage.setAttribute('src', dataUrl)
-          } catch {
-            // keep original src if conversion fails
-          }
-        }
+            const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image()
+              img.decoding = 'async'
+              img.onload = () => resolve(img)
+              img.onerror = () => reject(new Error('snapshot_load_failed'))
+              img.src = svgUrl
+            })
 
-        const serializedNode = new XMLSerializer().serializeToString(clone)
-        const svgString =
-          `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
-          `<foreignObject width="100%" height="100%">${serializedNode}</foreignObject>` +
-          '</svg>'
-        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
-        const svgUrl = URL.createObjectURL(svgBlob)
+            const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1))
+            const canvas = document.createElement('canvas')
+            canvas.width = Math.round(width * scale)
+            canvas.height = Math.round(height * scale)
+            const context = canvas.getContext('2d')
+            if (!context) {
+              throw new Error('canvas_context_unavailable')
+            }
+            context.scale(scale, scale)
+            context.fillStyle = '#ffffff'
+            context.fillRect(0, 0, width, height)
+            context.drawImage(image, 0, 0, width, height)
 
-        try {
-          const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-            const img = new Image()
-            img.decoding = 'async'
-            img.onload = () => resolve(img)
-            img.onerror = () => reject(new Error('snapshot_load_failed'))
-            img.src = svgUrl
-          })
-
-          const scale = Math.max(1, Math.min(2, window.devicePixelRatio || 1))
-          const canvas = document.createElement('canvas')
-          canvas.width = Math.round(width * scale)
-          canvas.height = Math.round(height * scale)
-          const context = canvas.getContext('2d')
-          if (!context) {
-            throw new Error('canvas_context_unavailable')
-          }
-          context.scale(scale, scale)
-          context.fillStyle = '#ffffff'
-          context.fillRect(0, 0, width, height)
-          context.drawImage(image, 0, 0, width, height)
-
-          const pngBlob = await new Promise<Blob>((resolve, reject) => {
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(blob)
-                return
+            const pngBlob = await new Promise<Blob>((resolve, reject) => {
+              try {
+                canvas.toBlob((blob) => {
+                  if (blob) {
+                    resolve(blob)
+                    return
+                  }
+                  reject(new Error('snapshot_blob_failed'))
+                }, 'image/png')
+              } catch (error) {
+                reject(error instanceof Error ? error : new Error('snapshot_blob_failed'))
               }
-              reject(new Error('snapshot_blob_failed'))
-            }, 'image/png')
-          })
-          const blobUrl = URL.createObjectURL(pngBlob)
-          clickDownloadLink(blobUrl)
-          window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
-          return true
-        } finally {
-          URL.revokeObjectURL(svgUrl)
+            })
+            const blobUrl = URL.createObjectURL(pngBlob)
+            clickDownloadLink(blobUrl)
+            window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
+            return true
+          } finally {
+            URL.revokeObjectURL(svgUrl)
+          }
+        } catch (error) {
+          console.warn('[download] capture DOM impossible, fallback composition:', error)
+          return false
         }
       }
 
