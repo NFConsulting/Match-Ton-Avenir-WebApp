@@ -624,10 +624,231 @@ function App() {
         }
       }
 
+      const tryDownloadComposedSnapshot = async () => {
+        const loadImageElement = async (imageUrl: string): Promise<HTMLImageElement> => {
+          const response = await fetch(imageUrl)
+          if (!response.ok) {
+            throw new Error('image_fetch_failed')
+          }
+
+          const imageBlob = await response.blob()
+          const imageBlobUrl = URL.createObjectURL(imageBlob)
+
+          try {
+            return await new Promise<HTMLImageElement>((resolve, reject) => {
+              const image = new Image()
+              image.decoding = 'async'
+              image.onload = () => resolve(image)
+              image.onerror = () => reject(new Error('image_load_failed'))
+              image.src = imageBlobUrl
+            })
+          } finally {
+            URL.revokeObjectURL(imageBlobUrl)
+          }
+        }
+
+        const wrapText = (
+          context: CanvasRenderingContext2D,
+          text: string,
+          maxWidth: number
+        ): string[] => {
+          const words = text.trim().split(/\s+/).filter(Boolean)
+          if (words.length === 0) return []
+
+          const lines: string[] = []
+          let current = words[0]
+          for (let i = 1; i < words.length; i += 1) {
+            const candidate = `${current} ${words[i]}`
+            if (context.measureText(candidate).width <= maxWidth) {
+              current = candidate
+            } else {
+              lines.push(current)
+              current = words[i]
+            }
+          }
+          lines.push(current)
+          return lines
+        }
+
+        const drawPanel = (
+          context: CanvasRenderingContext2D,
+          x: number,
+          y: number,
+          width: number,
+          height: number,
+          title: string,
+          lines: string[]
+        ) => {
+          const padding = 20
+          const titleHeight = 30
+          const lineHeight = 24
+
+          context.fillStyle = '#ffffff'
+          context.fillRect(x, y, width, height)
+          context.strokeStyle = '#e2e8f0'
+          context.lineWidth = 2
+          context.strokeRect(x, y, width, height)
+
+          context.fillStyle = '#0f172a'
+          context.font = '700 24px "Segoe UI", sans-serif'
+          context.fillText(title, x + padding, y + padding + 20)
+
+          context.fillStyle = '#334155'
+          context.font = '500 20px "Segoe UI", sans-serif'
+          let cursorY = y + padding + titleHeight + 6
+          for (const line of lines) {
+            context.fillText(line, x + padding, cursorY)
+            cursorY += lineHeight
+          }
+        }
+
+        try {
+          const image = await loadImageElement(url)
+          const canvas = document.createElement('canvas')
+          const context = canvas.getContext('2d')
+          if (!context) {
+            return false
+          }
+
+          const pageWidth = 1400
+          const pagePadding = 44
+          const blockGap = 26
+          const contentWidth = pageWidth - pagePadding * 2
+
+          const imageScale = Math.min(contentWidth / image.naturalWidth, 680 / image.naturalHeight)
+          const imageWidth = Math.max(1, Math.round(image.naturalWidth * imageScale))
+          const imageHeight = Math.max(1, Math.round(image.naturalHeight * imageScale))
+
+          context.font = '500 20px "Segoe UI", sans-serif'
+          const panelInnerWidth = (contentWidth - blockGap) / 2 - 40
+          const skillItems =
+            selectedStrengthsFromStart.length > 0
+              ? selectedStrengthsFromStart.map((item) => `• ${item}`)
+              : ['• Aucune compétence sélectionnée.']
+          const careerItems =
+            careersToDisplay.length > 0
+              ? careersToDisplay.map((item, index) => `${index + 1}. ${item}`)
+              : ['Aucun métier retourné pour le moment.']
+
+          const skillLines = skillItems.flatMap((item) => wrapText(context, item, panelInnerWidth))
+          const careerLines = careerItems.flatMap((item) => wrapText(context, item, panelInnerWidth))
+          const panelLineHeight = 24
+          const panelFixedHeight = 20 + 30 + 6 + 14
+          const skillsPanelHeight = Math.max(220, panelFixedHeight + skillLines.length * panelLineHeight)
+          const careersPanelHeight = Math.max(220, panelFixedHeight + careerLines.length * panelLineHeight)
+          const panelHeight = Math.max(skillsPanelHeight, careersPanelHeight)
+
+          context.font = '500 19px "Segoe UI", sans-serif'
+          const guidanceTextLines = [
+            "Cet outil utilise l'IA pour t'aider a imaginer ton futur et creer ton avatar.",
+            "Attention : l'IA n'est pas toujours exacte et les metiers ou suggestions qu'elle propose peuvent etre inappropries, incomplets ou peu adaptes a ta situation.",
+            "Utilise-les uniquement comme source d'inspiration, et verifie toujours avec des adultes ou des sources fiables.",
+            'Comme prochaines etapes :',
+            '• Consulte ONISEP - Decouvrir les metiers',
+            "• Parle a tes proches, a ton professeur principal ou a ton conseiller d'orientation",
+            '• Participe a des salons ou journees portes ouvertes pour decouvrir les metiers',
+          ].flatMap((line) => wrapText(context, line, contentWidth - 40))
+          const guidanceHeight = Math.max(230, 24 + 30 + 12 + guidanceTextLines.length * 23 + 24)
+
+          const totalHeight =
+            pagePadding +
+            52 +
+            blockGap +
+            imageHeight +
+            blockGap +
+            panelHeight +
+            blockGap +
+            guidanceHeight +
+            pagePadding
+
+          canvas.width = pageWidth
+          canvas.height = Math.ceil(totalHeight)
+
+          context.fillStyle = '#ffffff'
+          context.fillRect(0, 0, canvas.width, canvas.height)
+
+          context.fillStyle = '#0f172a'
+          context.font = '700 36px "Segoe UI", sans-serif'
+          context.fillText('Apercu de ton avatar', pagePadding, pagePadding + 34)
+
+          const imageX = pagePadding + Math.round((contentWidth - imageWidth) / 2)
+          const imageY = pagePadding + 52 + blockGap
+          context.fillStyle = '#ffffff'
+          context.fillRect(pagePadding, imageY, contentWidth, imageHeight)
+          context.strokeStyle = '#e2e8f0'
+          context.lineWidth = 2
+          context.strokeRect(pagePadding, imageY, contentWidth, imageHeight)
+          context.drawImage(image, imageX, imageY, imageWidth, imageHeight)
+
+          const panelY = imageY + imageHeight + blockGap
+          const leftPanelX = pagePadding
+          const rightPanelX = pagePadding + (contentWidth - blockGap) / 2 + blockGap
+          const panelWidth = (contentWidth - blockGap) / 2
+          drawPanel(
+            context,
+            leftPanelX,
+            panelY,
+            panelWidth,
+            panelHeight,
+            'Competences selectionnees',
+            skillLines
+          )
+          drawPanel(
+            context,
+            rightPanelX,
+            panelY,
+            panelWidth,
+            panelHeight,
+            'Metiers retournes par l IA',
+            careerLines
+          )
+
+          const guidanceY = panelY + panelHeight + blockGap
+          context.fillStyle = '#fffbeb'
+          context.fillRect(pagePadding, guidanceY, contentWidth, guidanceHeight)
+          context.strokeStyle = '#fde68a'
+          context.lineWidth = 2
+          context.strokeRect(pagePadding, guidanceY, contentWidth, guidanceHeight)
+
+          context.fillStyle = '#0f172a'
+          context.font = '700 28px "Segoe UI", sans-serif'
+          context.fillText('A savoir', pagePadding + 20, guidanceY + 38)
+
+          context.fillStyle = '#334155'
+          context.font = '500 19px "Segoe UI", sans-serif'
+          let guidanceCursorY = guidanceY + 70
+          for (const line of guidanceTextLines) {
+            context.fillText(line, pagePadding + 20, guidanceCursorY)
+            guidanceCursorY += 23
+          }
+
+          const pngBlob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob)
+                return
+              }
+              reject(new Error('composed_blob_failed'))
+            }, 'image/png')
+          })
+          const blobUrl = URL.createObjectURL(pngBlob)
+          clickDownloadLink(blobUrl)
+          window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1500)
+          return true
+        } catch {
+          return false
+        }
+      }
+
       setSnapshotDownloading(true)
       try {
         const snapshotDownloaded = await tryDownloadSectionSnapshot()
         if (snapshotDownloaded) {
+          return
+        }
+
+        const composedDownloaded = await tryDownloadComposedSnapshot()
+        if (composedDownloaded) {
           return
         }
 
@@ -646,7 +867,7 @@ function App() {
         setSnapshotDownloading(false)
       }
     },
-    []
+    [careersToDisplay, selectedStrengthsFromStart]
   )
 
   const submitPrompt = async (
@@ -1187,8 +1408,8 @@ function App() {
             </p>
           )}
           {singleImageUrl && (
-            <div className="space-y-4">
-              <div className="space-y-4" ref={snapshotSectionRef}>
+            <div className="space-y-4" ref={snapshotSectionRef}>
+              <div className="space-y-4">
                 <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
                   <img src={singleImageUrl} alt="Avatar généré" className="h-full w-full object-cover" />
                 </div>
@@ -1247,13 +1468,17 @@ function App() {
         <section className="space-y-4 pb-2">
           <DataPreventionFooter onOpenMentions={() => setShowMentionsModal(true)} />
           {singleImageUrl && (
-            <div className="flex flex-wrap gap-3">
-              <button type="button" className={buttonOutline} onClick={goToGenerator}>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                className={`${buttonOutline} w-full px-5 py-3 text-base`}
+                onClick={goToGenerator}
+              >
                 Revenir au générateur
               </button>
               <button
                 type="button"
-                className={buttonPrimary}
+                className={`${buttonPrimary} w-full px-5 py-3 text-base`}
                 onClick={() =>
                   void handleDownloadImage(singleImageUrl, route.imageId, snapshotSectionRef.current)
                 }
