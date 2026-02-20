@@ -691,22 +691,43 @@ function App() {
           lines: string[]
         ) => {
           const padding = 20
-          const titleHeight = 30
-          const lineHeight = 24
+          const titleLineHeight = 30
+          const lineHeight = 28
+          const radius = 24
 
-          context.fillStyle = '#ffffff'
-          context.fillRect(x, y, width, height)
-          context.strokeStyle = '#e2e8f0'
+          const gradient = context.createLinearGradient(x, y, x + width, y + height)
+          gradient.addColorStop(0, 'rgba(211, 8, 116, 0.08)')
+          gradient.addColorStop(1, 'rgba(151, 151, 151, 0.12)')
+
+          context.beginPath()
+          context.moveTo(x + radius, y)
+          context.lineTo(x + width - radius, y)
+          context.quadraticCurveTo(x + width, y, x + width, y + radius)
+          context.lineTo(x + width, y + height - radius)
+          context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+          context.lineTo(x + radius, y + height)
+          context.quadraticCurveTo(x, y + height, x, y + height - radius)
+          context.lineTo(x, y + radius)
+          context.quadraticCurveTo(x, y, x + radius, y)
+          context.closePath()
+          context.fillStyle = gradient
+          context.fill()
+          context.strokeStyle = 'rgba(211, 8, 116, 0.22)'
           context.lineWidth = 2
-          context.strokeRect(x, y, width, height)
+          context.stroke()
 
           context.fillStyle = '#0f172a'
-          context.font = '700 24px "Segoe UI", sans-serif'
-          context.fillText(title, x + padding, y + padding + 20)
+          context.font = '700 26px "Space Grotesk", "Segoe UI", sans-serif'
+          const titleLines = wrapText(context, title, width - padding * 2)
+          let titleY = y + padding + 24
+          for (const titleLine of titleLines) {
+            context.fillText(titleLine, x + padding, titleY)
+            titleY += titleLineHeight
+          }
 
           context.fillStyle = '#334155'
-          context.font = '500 20px "Segoe UI", sans-serif'
-          let cursorY = y + padding + titleHeight + 6
+          context.font = '600 21px "Space Grotesk", "Segoe UI", sans-serif'
+          let cursorY = titleY + 6
           for (const line of lines) {
             context.fillText(line, x + padding, cursorY)
             cursorY += lineHeight
@@ -734,8 +755,8 @@ function App() {
           const panelInnerWidth = (contentWidth - blockGap) / 2 - 40
           const skillItems =
             selectedStrengthsFromStart.length > 0
-              ? selectedStrengthsFromStart.map((item) => `• ${item}`)
-              : ['• Aucune compétence sélectionnée.']
+              ? selectedStrengthsFromStart
+              : ['Aucune compétence sélectionnée.']
           const careerItems =
             careersToDisplay.length > 0
               ? careersToDisplay.map((item, index) => `${index + 1}. ${item}`)
@@ -743,8 +764,8 @@ function App() {
 
           const skillLines = skillItems.flatMap((item) => wrapText(context, item, panelInnerWidth))
           const careerLines = careerItems.flatMap((item) => wrapText(context, item, panelInnerWidth))
-          const panelLineHeight = 24
-          const panelFixedHeight = 20 + 30 + 6 + 14
+          const panelLineHeight = 28
+          const panelFixedHeight = 20 + 64 + 10 + 16
           const skillsPanelHeight = Math.max(220, panelFixedHeight + skillLines.length * panelLineHeight)
           const careersPanelHeight = Math.max(220, panelFixedHeight + careerLines.length * panelLineHeight)
           const panelHeight = Math.max(skillsPanelHeight, careersPanelHeight)
@@ -801,7 +822,7 @@ function App() {
             panelY,
             panelWidth,
             panelHeight,
-            'Competences selectionnees',
+            '🏅 Compétences sélectionnées',
             skillLines
           )
           drawPanel(
@@ -810,7 +831,7 @@ function App() {
             panelY,
             panelWidth,
             panelHeight,
-            'Metiers retournes par l IA',
+            '🧭 Métiers retournés par l’intelligence artificielle',
             careerLines
           )
 
