@@ -15,6 +15,8 @@ type AvatarSectionProps = {
   onToggleStyle: (label: string) => void
   avatarTeint: string
   onTeintChange: (value: string) => void
+  avatarSilhouette: string
+  onSilhouetteChange: (value: string) => void
   avatarWords: string[]
   onWordChange: (index: number, value: string) => void
 }
@@ -32,6 +34,8 @@ const AvatarSection = ({
   onToggleStyle,
   avatarTeint,
   onTeintChange,
+  avatarSilhouette,
+  onSilhouetteChange,
   avatarWords,
   onWordChange,
 }: AvatarSectionProps) => (
@@ -136,6 +140,30 @@ const AvatarSection = ({
               value={option}
               checked={avatarTeint === option}
               onChange={(event) => onTeintChange(event.target.value)}
+              className="h-4 w-4 accent-brand-500"
+            />
+            {option}
+          </label>
+        ))}
+      </div>
+    </div>
+
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-slate-800">
+        <Emoji symbol="🧍" /> Silhouette de l'avatar
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {['Mince', 'Élancé(e)', 'Athlétique', 'Costaud', 'Imposant(e)'].map((option) => (
+          <label
+            key={option}
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/80 px-3 py-2 text-sm font-medium text-slate-800 shadow-sm transition hover:border-brand-500/30"
+          >
+            <input
+              type="radio"
+              name="avatarSilhouette"
+              value={option}
+              checked={avatarSilhouette === option}
+              onChange={(event) => onSilhouetteChange(event.target.value)}
               className="h-4 w-4 accent-brand-500"
             />
             {option}

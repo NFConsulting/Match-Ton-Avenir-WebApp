@@ -15,6 +15,14 @@ const buildList = (options: string[] | { label: string }[], selected: Record<str
 
 const strengthOptions = [...cognitive, ...emotional, ...social]
 
+const silhouettePromptByLabel: Record<string, string> = {
+  Mince: 'avec une silhouette fine',
+  'Élancé(e)': 'avec une silhouette grande et élancée',
+  'Athlétique': 'avec une silhouette athlétique et en forme',
+  Costaud: 'avec une silhouette forte et solide',
+  'Imposant(e)': 'avec une silhouette large et puissante',
+}
+
 const buildJobsList = (jobs: string[], exploring: boolean) => {
   const selectedJobs = jobs.map((job) => job.trim()).filter(Boolean)
   if (selectedJobs.length > 0) return selectedJobs
@@ -44,6 +52,7 @@ export const buildPrompt = ({
   avatarExpression,
   hair,
   avatarTeint,
+  avatarSilhouette,
   avatarWords,
   jobs,
   exploring,
@@ -54,6 +63,7 @@ export const buildPrompt = ({
   const styles = buildList(avatarStyles, chosenStyles)
   const words = avatarWords.filter(Boolean)
   const jobsText = buildJobsText(jobs, exploring)
+  const silhouetteInstruction = silhouettePromptByLabel[avatarSilhouette] ?? ''
 
   const lines = [
     'Crée un avatar inspirant représentant une personne jeune adulte (environ 30 ans) avec les',
@@ -65,6 +75,12 @@ export const buildPrompt = ({
     `Genre : ${avatarGender || 'non précisé'}`,
     `Cheveux : ${hair || 'non précisé'}`,
     `Teint : ${avatarTeint || 'non précisé'}`,
+    `Silhouette : ${avatarSilhouette || 'non précisée'}`,
+    `Consigne morphologie : ${
+      silhouetteInstruction
+        ? `applique à l’avatar la forme corporelle suivante : ${silhouetteInstruction}.`
+        : 'non précisée'
+    }`,
     `Expression du visage : ${avatarExpression || 'non précisée'}`,
     `Posture : ${postures.length ? postures.join(', ') : 'non précisée'}`,
     `Style vestimentaire : ${styles.length ? styles.join(', ') : 'non précisé'}`,

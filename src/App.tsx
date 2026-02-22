@@ -64,7 +64,7 @@ const GuidanceNotice = () => (
 const DataPreventionFooter = ({ onOpenMentions }: { onOpenMentions: () => void }) => (
   <div className="rounded-xl border border-slate-200/80 bg-white/80 px-4 py-3 text-xs leading-relaxed text-slate-600">
     <p>
-      Dans le cadre de l’évènement Match ton Avenir, le Conseil Départemental des Yvelines
+      Dans le cadre de l’événement Match ton Avenir, le Conseil Départemental des Yvelines
       utilise les informations que tu renseignes pour créer ton avatar et t’aider à visualiser ton
       projet d’études ou professionnel.
     </p>
@@ -117,7 +117,7 @@ const MentionsModal = ({ open, onClose }: { open: boolean; onClose: () => void }
           <CloseIcon className="h-4 w-4" />
         </button>
 
-        <p className="text-xl font-bold text-slate-900">Evènement : Match ton Avenir</p>
+        <p className="text-xl font-bold text-slate-900">Événement : Match ton Avenir</p>
         <p className="mt-1 text-lg font-semibold text-slate-900">Qui utilise tes données ?</p>
         <p className="mt-2 text-sm text-slate-700">
           Le Conseil Départemental des Yvelines (représenté par son Président, situé au 2, Place
@@ -129,7 +129,7 @@ const MentionsModal = ({ open, onClose }: { open: boolean; onClose: () => void }
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-700">
           <li>Mieux imaginer ton futur métier</li>
           <li>Réfléchir à ton projet d’études</li>
-          <li>Evaluer l’évènement</li>
+          <li>Évaluer l’événement</li>
         </ul>
 
         <p className="mt-5 text-lg font-semibold text-slate-900">Quelles données ?</p>
@@ -146,7 +146,7 @@ const MentionsModal = ({ open, onClose }: { open: boolean; onClose: () => void }
         </p>
         <p className="mt-2 text-sm text-slate-700">
           Parce que tu as donné ton consentement (article 6(1)a du RGPD) et parce que cela nous
-          aide à mesurer l’efficacité et à améliorer les évènements que nous te proposeront par la
+          aide à mesurer l’efficacité et à améliorer les événements que nous te proposerons par la
           suite (article 6(1)f).
         </p>
 
@@ -286,6 +286,7 @@ function App() {
   const [hair, setHair] = useState('')
   const [chosenStyles, setChosenStyles] = useState<Record<string, boolean>>({})
   const [avatarTeint, setAvatarTeint] = useState('')
+  const [avatarSilhouette, setAvatarSilhouette] = useState('')
   const [avatarWords, setAvatarWords] = useState<string[]>(['', '', ''])
   const [imageUrl, setImageUrl] = useState('')
   const [imageId, setImageId] = useState<string | undefined>()
@@ -311,6 +312,7 @@ function App() {
   const [portfolioLoadingMore, setPortfolioLoadingMore] = useState(false)
   const [snapshotDownloading, setSnapshotDownloading] = useState(false)
   const [snapshotDownloadError, setSnapshotDownloadError] = useState<string | null>(null)
+  const [generationError, setGenerationError] = useState<string | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const observerRef = useRef<IntersectionObserver | null>(null)
   const snapshotPageRef = useRef<HTMLElement | null>(null)
@@ -408,6 +410,7 @@ function App() {
   const hasAvatarPosture = Object.values(chosenPostures).some(Boolean)
   const hasAvatarHair = Boolean(hair)
   const hasAvatarTeint = Boolean(avatarTeint)
+  const hasAvatarSilhouette = Boolean(avatarSilhouette)
   const hasAvatarStyle = Object.values(chosenStyles).some(Boolean)
   const hasAvatarAnswer =
     hasAvatarGender &&
@@ -415,6 +418,7 @@ function App() {
     hasAvatarPosture &&
     hasAvatarHair &&
     hasAvatarTeint &&
+    hasAvatarSilhouette &&
     hasAvatarStyle
   const careersToDisplay = suggestedCareers
   const selectedStrengthsFromStart = strengthLabels.filter((label) => strengthsSelected[label])
@@ -443,7 +447,7 @@ function App() {
     interests: 'Choisis au moins un centre d’intérêt.',
     jobs: 'Renseigne un métier ou coche “Je suis encore en exploration”.',
     avatar:
-      'Renseigne genre, expression, posture, cheveux, teint et style vestimentaire pour l’avatar.',
+      'Renseigne genre, expression, posture, cheveux, teint, silhouette et style vestimentaire pour l’avatar.',
   }
 
   const buildPromptInput = (): PromptInput => ({
@@ -455,6 +459,7 @@ function App() {
     avatarExpression,
     hair,
     avatarTeint,
+    avatarSilhouette,
     avatarWords,
     jobs,
     exploring,
@@ -772,13 +777,13 @@ function App() {
 
           context.font = '500 19px "Segoe UI", sans-serif'
           const guidanceTextLines = [
-            "Cet outil utilise l'IA pour t'aider a imaginer ton futur et creer ton avatar.",
-            "Attention : l'IA n'est pas toujours exacte et les metiers ou suggestions qu'elle propose peuvent etre inappropries, incomplets ou peu adaptes a ta situation.",
-            "Utilise-les uniquement comme source d'inspiration, et verifie toujours avec des adultes ou des sources fiables.",
-            'Comme prochaines etapes :',
-            '• Consulte ONISEP - Decouvrir les metiers',
-            "• Parle a tes proches, a ton professeur principal ou a ton conseiller d'orientation",
-            '• Participe a des salons ou journees portes ouvertes pour decouvrir les metiers',
+            "Cet outil utilise l'IA pour t'aider à imaginer ton futur et créer ton avatar.",
+            "Attention : l'IA n'est pas toujours exacte et les métiers ou suggestions qu'elle propose peuvent être inappropriés, incomplets ou peu adaptés à ta situation.",
+            "Utilise-les uniquement comme source d'inspiration, et vérifie toujours avec des adultes ou des sources fiables.",
+            'Comme prochaines étapes :',
+            '• Consulte ONISEP - Découvrir les métiers',
+            "• Parle à tes proches, à ton professeur principal ou à ton conseiller d'orientation",
+            '• Participe à des salons ou journées portes ouvertes pour découvrir les métiers',
           ].flatMap((line) => wrapText(context, line, contentWidth - 40))
           const guidanceHeight = Math.max(230, 24 + 30 + 12 + guidanceTextLines.length * 23 + 24)
 
@@ -801,7 +806,7 @@ function App() {
 
           context.fillStyle = '#0f172a'
           context.font = '700 36px "Segoe UI", sans-serif'
-          context.fillText('Apercu de ton avatar', pagePadding, pagePadding + 34)
+          context.fillText('Aperçu de ton avatar', pagePadding, pagePadding + 34)
 
           const imageX = pagePadding + Math.round((contentWidth - imageWidth) / 2)
           const imageY = pagePadding + 52 + blockGap
@@ -913,6 +918,7 @@ function App() {
     setImageId(undefined)
     setSuggestedCareers([])
     setCareersIsFallback(null)
+    setGenerationError(null)
 
     const cleanedPrompt = prompt.trim()
     if (!cleanedPrompt) {
@@ -921,7 +927,9 @@ function App() {
     }
 
     setLoading(true)
+    let failedEndpoint: 'careers' | 'image' | null = null
     try {
+      failedEndpoint = 'careers'
       const careersData = await careersSelector(careersPayload)
       const careers = Array.isArray(careersData)
         ? careersData.filter((career) => typeof career === 'string')
@@ -930,6 +938,7 @@ function App() {
       setSuggestedCareers(careers)
       setCareersIsFallback(null)
 
+      failedEndpoint = 'image'
       const data = await generator(cleanedPrompt, careers)
 
       const finalCareers = Array.isArray(data.suggestedCareers)
@@ -946,10 +955,24 @@ function App() {
         setRoute({ view: 'single', imageId: normalizedImageId })
         setView('form') // align view state when switching to single
       }
+      failedEndpoint = null
     } catch (fetchError) {
       const rawMessage = fetchError instanceof Error ? fetchError.message : ''
-      const message = friendlyMessage(rawMessage, 'Impossible de contacter le service.')
-      console.error('[generate] Echec génération:', message, fetchError)
+      const endpointLabel =
+        failedEndpoint === 'careers'
+          ? '/api/Image/carrer'
+          : failedEndpoint === 'image'
+            ? '/api/image/google'
+            : 'service'
+      const fallbackMessage =
+        failedEndpoint === 'careers'
+          ? 'Impossible de récupérer les métiers pour le moment.'
+          : failedEndpoint === 'image'
+            ? "Impossible de générer l'image pour le moment."
+            : 'Impossible de contacter le service.'
+      const message = friendlyMessage(rawMessage, fallbackMessage)
+      setGenerationError(`Erreur ${endpointLabel}: ${message}`)
+      console.error(`[generate] Echec ${endpointLabel}:`, message, fetchError)
     } finally {
       setLoading(false)
     }
@@ -1246,6 +1269,8 @@ function App() {
                 onToggleStyle={toggleStyle}
                 avatarTeint={avatarTeint}
                 onTeintChange={setAvatarTeint}
+                avatarSilhouette={avatarSilhouette}
+                onSilhouetteChange={setAvatarSilhouette}
                 avatarWords={avatarWords}
                 onWordChange={(idx, value) => {
                   const next = [...avatarWords]
@@ -1262,6 +1287,7 @@ function App() {
       avatarExpression,
       avatarGender,
       avatarTeint,
+      avatarSilhouette,
       avatarWords,
       chosenPostures,
       chosenStyles,
@@ -1299,12 +1325,14 @@ function App() {
     setHair('')
     setChosenStyles({})
     setAvatarTeint('')
+    setAvatarSilhouette('')
     setAvatarWords(['', '', ''])
     setImageUrl('')
     setImageId(undefined)
     setSuggestedCareers([])
     setCareersIsFallback(null)
     setLoading(false)
+    setGenerationError(null)
   }
 
   const goToGenerator = () => {
@@ -1699,6 +1727,21 @@ function App() {
               )}
             </div>
           </div>
+          {isLastStep && generationError && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+              <p className="text-sm font-medium text-red-700">{generationError}</p>
+              <div className="mt-3">
+                <button
+                  type="button"
+                  className={`${buttonPrimaryLarge} w-full sm:w-auto`}
+                  onClick={handleGenerate}
+                  disabled={loading}
+                >
+                  <Emoji symbol="🔄" /> Régénérer l&apos;avatar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
     </main>

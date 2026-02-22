@@ -28,6 +28,7 @@ export type PromptInput = {
   avatarExpression: string
   hair: string
   avatarTeint: string
+  avatarSilhouette: string
   avatarWords: string[]
   jobs: string[]
   exploring: boolean
